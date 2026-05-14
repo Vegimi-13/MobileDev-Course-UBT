@@ -1,0 +1,355 @@
+import { StatusBar } from "expo-status-bar";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import type { AuthForm, AuthMode } from "../models/auth";
+
+type AuthScreenProps = {
+  apiUrl: string;
+  canSubmit: boolean;
+  form: AuthForm;
+  isLoading: boolean;
+  message: string;
+  mode: AuthMode;
+  copy: {
+    title: string;
+    subtitle: string;
+    buttonTitle: string;
+  };
+  onSubmit: () => void;
+  onSwitchMode: (mode: AuthMode) => void;
+  onUpdateForm: (key: keyof AuthForm, value: string) => void;
+};
+
+export function AuthScreen({
+  apiUrl,
+  canSubmit,
+  copy,
+  form,
+  isLoading,
+  message,
+  mode,
+  onSubmit,
+  onSwitchMode,
+  onUpdateForm,
+}: AuthScreenProps) {
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.brandRow}>
+            <View style={styles.logo}>
+              <Text style={styles.logoText}>TP</Text>
+            </View>
+            <View>
+              <Text style={styles.brandName}>Trip Platform</Text>
+              <Text style={styles.brandTagline}>Travel starts here</Text>
+            </View>
+          </View>
+
+          <View style={styles.panel}>
+            <View style={styles.segmentedControl}>
+              <Pressable
+                accessibilityRole="button"
+                style={[
+                  styles.segment,
+                  mode === "login" && styles.segmentActive,
+                ]}
+                onPress={() => onSwitchMode("login")}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    mode === "login" && styles.segmentTextActive,
+                  ]}
+                >
+                  Login
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                style={[
+                  styles.segment,
+                  mode === "register" && styles.segmentActive,
+                ]}
+                onPress={() => onSwitchMode("register")}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    mode === "register" && styles.segmentTextActive,
+                  ]}
+                >
+                  Register
+                </Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.title}>{copy.title}</Text>
+            <Text style={styles.subtitle}>{copy.subtitle}</Text>
+
+            {mode === "register" && (
+              <View style={styles.nameRow}>
+                <View style={styles.nameInputWrap}>
+                  <Text style={styles.label}>First name</Text>
+                  <TextInput
+                    autoCapitalize="words"
+                    onChangeText={(value) => onUpdateForm("firstName", value)}
+                    placeholder="Arta"
+                    placeholderTextColor="#a9998f"
+                    style={styles.input}
+                    value={form.firstName}
+                  />
+                </View>
+                <View style={styles.nameInputWrap}>
+                  <Text style={styles.label}>Last name</Text>
+                  <TextInput
+                    autoCapitalize="words"
+                    onChangeText={(value) => onUpdateForm("lastName", value)}
+                    placeholder="Krasniqi"
+                    placeholderTextColor="#a9998f"
+                    style={styles.input}
+                    value={form.lastName}
+                  />
+                </View>
+              </View>
+            )}
+
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              onChangeText={(value) => onUpdateForm("email", value)}
+              placeholder="you@example.com"
+              placeholderTextColor="#a9998f"
+              style={styles.input}
+              textContentType="emailAddress"
+              value={form.email}
+            />
+
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              autoCapitalize="none"
+              onChangeText={(value) => onUpdateForm("password", value)}
+              placeholder={mode === "login" ? "Your password" : "6+ characters"}
+              placeholderTextColor="#a9998f"
+              secureTextEntry
+              style={styles.input}
+              textContentType={mode === "login" ? "password" : "newPassword"}
+              value={form.password}
+            />
+
+            {message.length > 0 && (
+              <View style={styles.messageBox}>
+                <Text style={styles.messageText}>{message}</Text>
+              </View>
+            )}
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={!canSubmit || isLoading}
+              onPress={onSubmit}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                (!canSubmit || isLoading) && styles.primaryButtonDisabled,
+                pressed && canSubmit && !isLoading && styles.primaryButtonPressed,
+              ]}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fffaf4" />
+              ) : (
+                <Text style={styles.primaryButtonText}>{copy.buttonTitle}</Text>
+              )}
+            </Pressable>
+
+            <Text style={styles.apiText}>Backend: {apiUrl}</Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <StatusBar style="dark" />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff7ef",
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 24,
+  },
+  brandRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 14,
+    marginBottom: 28,
+  },
+  logo: {
+    alignItems: "center",
+    backgroundColor: "#c76f33",
+    borderRadius: 18,
+    height: 56,
+    justifyContent: "center",
+    shadowColor: "#7c3f1d",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    width: 56,
+  },
+  logoText: {
+    color: "#fffaf4",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  brandName: {
+    color: "#2c201b",
+    fontSize: 25,
+    fontWeight: "800",
+  },
+  brandTagline: {
+    color: "#7d6254",
+    fontSize: 14,
+    marginTop: 2,
+  },
+  panel: {
+    backgroundColor: "#fffdf9",
+    borderColor: "#efd9c8",
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 22,
+    shadowColor: "#7c3f1d",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.1,
+    shadowRadius: 28,
+  },
+  segmentedControl: {
+    backgroundColor: "#f4e3d5",
+    borderRadius: 16,
+    flexDirection: "row",
+    marginBottom: 26,
+    padding: 4,
+  },
+  segment: {
+    alignItems: "center",
+    borderRadius: 12,
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 44,
+  },
+  segmentActive: {
+    backgroundColor: "#fffaf4",
+    shadowColor: "#7c3f1d",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+  },
+  segmentText: {
+    color: "#7d6254",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  segmentTextActive: {
+    color: "#a94f22",
+  },
+  title: {
+    color: "#2c201b",
+    fontSize: 30,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: "#765e52",
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  nameRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  nameInputWrap: {
+    flex: 1,
+  },
+  label: {
+    color: "#4b3930",
+    fontSize: 13,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: "#fff8f1",
+    borderColor: "#ead2bf",
+    borderRadius: 14,
+    borderWidth: 1,
+    color: "#2c201b",
+    fontSize: 16,
+    marginBottom: 16,
+    minHeight: 52,
+    paddingHorizontal: 14,
+  },
+  messageBox: {
+    backgroundColor: "#fff0e5",
+    borderColor: "#e2ae86",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 16,
+    padding: 12,
+  },
+  messageText: {
+    color: "#8f3d1d",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  primaryButton: {
+    alignItems: "center",
+    backgroundColor: "#b85f2b",
+    borderRadius: 16,
+    justifyContent: "center",
+    minHeight: 54,
+    shadowColor: "#7c3f1d",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+  },
+  primaryButtonPressed: {
+    backgroundColor: "#9e4e22",
+  },
+  primaryButtonDisabled: {
+    backgroundColor: "#d8aa8d",
+    shadowOpacity: 0,
+  },
+  primaryButtonText: {
+    color: "#fffaf4",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  apiText: {
+    color: "#8b7163",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 18,
+    textAlign: "center",
+  },
+});
