@@ -1,0 +1,257 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  firstName String
+  lastName  String
+  username  String?  @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  refreshTokens RefreshToken[]
+
+  // Relations
+  tripsCreated   Trip[]            @relation("TripCreator")
+  participations TripParticipant[]
+  photos         Photo[]
+  likes          Like[]
+
+  following Follow[] @relation("UserFollowing")
+  followers Follow[] @relation("UserFollowers")
+
+  notificationsReceived Notification[] @relation("NotificationReceiver")
+  notificationsSent     Notification[] @relation("NotificationSender")
+  expoPushTokens        ExpoPushToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+//////////////////////
+// TRIPS
+//////////////////////
+
+model Trip {
+  id          String   @id @default(uuid())
+  publicId    String   @unique @default(uuid())
+
+  title       String
+  description String?
+  destination String
+
+  startDate   DateTime
+  endDate     DateTime
+
+  visibility  Visibility @default(PUBLIC)
+  joinPolicy  JoinPolicy @default(OPEN)
+
+  maxMembers  Int?
+
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  creator User @relation("TripCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  participants TripParticipant[]
+  photos       Photo[]
+  likes        Like[]
+  notifications Notification[]
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  tags TripTag[]
+}
+
+//////////////////////
+// PARTICIPANTS
+//////////////////////
+
+model TripParticipant {
+  id     String @id @default(uuid())
+
+  userId String
+  tripId String
+
+  role   Role   @default(MEMBER)
+  status Status @default(PENDING)
+
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tripId])
+}
+
+//////////////////////
+// MEDIA
+//////////////////////
+
+model Photo {
+  id         String   @id @default(uuid())
+  imageUrl   String
+  caption    String?
+
+  tripId     String
+  uploadedBy String
+
+  createdAt  DateTime @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  likes Like[]
+}
+
+//////////////////////
+// SOCIAL
+//////////////////////
+
+model Follow {
+  id          String @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  tripId    String?
+  photoId   String?
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip  Trip? @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  photo Photo? @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tripId])
+  @@unique([userId, photoId])
+}
+
+//////////////////////
+// DISCOVERY
+//////////////////////
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+
+  trips Trip[]
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+
+  trips TripTag[]
+}
+
+model TripTag {
+  tripId String
+  tagId  String
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([tripId, tagId])
+}
+
+//////////////////////
+// NOTIFICATIONS
+//////////////////////
+
+model Notification {
+  id        String   @id @default(uuid())
+
+  type      NotificationType
+  message   String
+
+  receiverId String
+  senderId   String?
+
+  tripId String?
+
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  receiver User @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender   User? @relation("NotificationSender", fields: [senderId], references: [id])
+
+  trip Trip? @relation(fields: [tripId], references: [id])
+}
+
+model ExpoPushToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+//////////////////////
+// ENUMS
+//////////////////////
+
+enum Role {
+  OWNER
+  MEMBER
+}
+
+enum Status {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum JoinPolicy {
+  OPEN
+  APPROVAL
+}
+
+enum NotificationType {
+  FOLLOW
+  TRIP_INVITE
+  TRIP_JOIN
+  LIKE
+  COMMENT
+}
+
