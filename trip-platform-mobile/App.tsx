@@ -1,7 +1,7 @@
 import { useAuthViewModel } from "./src/viewmodels/useAuthViewModel";
 import { AuthScreen } from "./src/views/AuthScreen";
 import { LoadingScreen } from "./src/views/LoadingScreen";
-import { SignedInScreen } from "./src/views/SignedInScreen";
+import { HomeScreen } from "./src/views/HomeScreen";
 
 export default function App() {
   const auth = useAuthViewModel();
@@ -11,7 +11,7 @@ export default function App() {
   }
 
   if (auth.isSignedIn) {
-    return <SignedInScreen apiUrl={auth.apiUrl} onLogout={auth.logout} />;
+    return <HomeScreen apiUrl={auth.apiUrl} onLogout={auth.logout} />;
   }
 
   return (
