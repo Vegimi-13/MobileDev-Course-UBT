@@ -12,17 +12,17 @@ import { useHomeViewModel } from "../viewmodels/useHomeViewModel";
 
 type HomeScreenProps = {
   apiUrl: string;
-  onLogout: () => void;
 };
 
 export function HomeScreen({ apiUrl, onLogout }: HomeScreenProps) {
-  const { trips, isLoading, refresh, error } = useHomeViewModel();
+  const { trips, isLoading, refresh, error, user, greeting } =
+    useHomeViewModel();
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Good morning 🌞</Text>
-        <Text style={styles.name}>Hey, Sofia! 👋</Text>
+        <Text style={styles.greeting}>{greeting}</Text>
+        <Text style={styles.name}>Hey, {user?.firstName ?? "there"}! 👋</Text>
       </View>
 
       <FlatList
