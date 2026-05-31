@@ -4,11 +4,15 @@ import { fetchTrips } from "../services/tripService";
 import { fetchCurrentUser } from "../services/userService";
 import type { User } from "../models/user";
 
+type HomeStatusFilter = "All" | "Upcoming" | "Ongoing" | "Completed";
+
 export function useHomeViewModel() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeStatusFilter, setActiveStatusFilter] =
+    useState<HomeStatusFilter>("All");
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -43,10 +47,110 @@ export function useHomeViewModel() {
     return "Good evening";
   }, []);
 
+  const sortedTrips = useMemo(
+    () => [...trips].sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0)),
+    [trips],
+  );
+
+  const featuredTrip = sortedTrips[0] ?? null;
+  const upcomingTrips = sortedTrips.filter((trip) => trip.status === "Upcoming");
+  const completedTrips = sortedTrips.filter(
+    (trip) => trip.status === "Completed",
+  ).length;
+  const publicTrips = sortedTrips.filter((trip) => trip.visibility === "Public");
+
+  const stats = useMemo(
+    () => [
+      {
+        label: "Trips planned",
+        value: String(sortedTrips.length),
+      },
+      {
+        label: "Countries",
+        value: String(new Set(sortedTrips.map((trip) => trip.country).filter(Boolean)).size),
+      },
+      {
+        label: "Saved likes",
+        value: String(
+          sortedTrips.reduce((sum, trip) => sum + (trip.likes ?? 0), 0),
+        ),
+      },
+    ],
+    [sortedTrips],
+  );
+
+  const collections = useMemo(
+    () => [
+      {
+        title: "Next departure",
+        subtitle:
+          upcomingTrips[0]?.date ??
+          "Choose a destination and lock in your next route.",
+        accent: "#F26A2E",
+      },
+      {
+        title: "Public adventures",
+        subtitle: `${publicTrips.length} trips open for the crew to follow along.`,
+        accent: "#12B981",
+      },
+      {
+        title: "Completed journals",
+        subtitle: `${completedTrips} memory-packed trips ready to revisit.`,
+        accent: "#6A35C8",
+      },
+    ],
+    [completedTrips, publicTrips.length, upcomingTrips],
+  );
+
+  const displayName = user?.firstName ?? "traveler";
+  const profileHandle =
+    user?.username ??
+    `${user?.firstName ?? "trip"}${user?.lastName ?? "friend"}`.toLowerCase();
+
+  const statusFilters: HomeStatusFilter[] = [
+    "All",
+    "Upcoming",
+    "Ongoing",
+    "Completed",
+  ];
+  const myTrips = sortedTrips.slice(0, 4);
+  const discoverTrips =
+    activeStatusFilter === "All"
+      ? sortedTrips
+      : sortedTrips.filter((trip) => trip.status === activeStatusFilter);
+  const profileStats = [
+    {
+      label: "My Trips",
+      value: user?.tripsCount ?? sortedTrips.length,
+      tone: "orange" as const,
+    },
+    {
+      label: "Following",
+      value: user?.followingCount ?? 234,
+      tone: "mint" as const,
+    },
+    {
+      label: "Followers",
+      value: user?.followersCount ?? 891,
+      tone: "blue" as const,
+    },
+  ];
+
   return {
-    trips,
+    activeStatusFilter,
+    discoverTrips,
+    trips: sortedTrips,
+    myTrips,
     user,
     greeting,
+    displayName,
+    profileHandle,
+    featuredTrip,
+    profileStats,
+    setActiveStatusFilter,
+    statusFilters,
+    stats,
+    collections,
     isLoading,
     error,
     refresh: load,

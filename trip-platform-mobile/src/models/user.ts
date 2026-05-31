@@ -5,4 +5,9 @@ export type User = {
   lastName: string;
   username?: string;
   createdAt: string;
+  bio?: string;
+  avatarUrl?: string;
+  tripsCount?: number;
+  followersCount?: number;
+  followingCount?: number;
 };

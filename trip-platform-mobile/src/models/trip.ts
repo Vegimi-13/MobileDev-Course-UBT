@@ -9,4 +9,13 @@ export type Trip = {
   likes?: number;
   joined?: string;
   spotsLeft?: number;
+  status?: "Upcoming" | "Ongoing" | "Completed";
+  visibility?: "Public" | "Private";
+  joinPolicy?: "Open" | "Approval";
+  country?: string;
+  continent?: string;
+  summary?: string;
+  category?: "Beach" | "Mountains" | "City" | "Adventure";
+  membersJoined?: number;
+  maxMembers?: number;
 };

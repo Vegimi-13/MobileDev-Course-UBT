@@ -8,7 +8,7 @@ export async function fetchCurrentUser(): Promise<User> {
     throw new Error("Not authenticated");
   }
 
-  const response = await fetch(`${API_URL}/api/user/me`, {
+  const response = await fetch(`${API_URL}/api/users/me`, {
     headers: {
       Authorization: `Bearer ${session.accessToken}`,
     },
@@ -20,5 +20,17 @@ export async function fetchCurrentUser(): Promise<User> {
     throw new Error(data.message ?? "Failed to fetch user");
   }
 
-  return data as User;
+  const user = data as User;
+
+  return {
+    ...user,
+    avatarUrl:
+      user.avatarUrl ??
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
+    bio:
+      user.bio ??
+      "Explorer. Coffee addict. Always planning the next trip and the one after that.",
+    followersCount: user.followersCount ?? 891,
+    followingCount: user.followingCount ?? 234,
+  };
 }
