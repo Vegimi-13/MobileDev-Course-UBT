@@ -1,18 +1,43 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "../models/user";
-import { fetchCurrentUser } from "../services/userService";
+import {
+  fetchCurrentUser,
+  updateCurrentUser,
+  type UpdateCurrentUserPayload,
+} from "../services/userService";
 import { fetchMyTrips } from "../services/tripService";
 import { fetchFollowers, fetchFollowing } from "../services/followService";
 import type { Trip } from "../models/trip";
 
 type ProfileTab = "trips" | "photos" | "reviews";
+export type ProfileForm = Required<
+  Pick<User, "firstName" | "lastName" | "username" | "bio" | "avatarUrl">
+>;
+
+const toProfileForm = (user: User): ProfileForm => ({
+  firstName: user.firstName ?? "",
+  lastName: user.lastName ?? "",
+  username: user.username ?? "",
+  bio: user.bio ?? "",
+  avatarUrl: user.avatarUrl ?? "",
+});
 
 export function useProfileViewModel() {
   const [user, setUser] = useState<User | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("trips");
+  const [profileForm, setProfileForm] = useState<ProfileForm>({
+    firstName: "",
+    lastName: "",
+    username: "",
+    bio: "",
+    avatarUrl: "",
+  });
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -26,7 +51,7 @@ export function useProfileViewModel() {
         fetchFollowers(userData.id).catch(() => []),
         fetchFollowing(userData.id).catch(() => []),
       ]);
-      setUser(userData);
+      setProfileForm(toProfileForm(userData));
       setTrips(tripsData);
       setUser({
         ...userData,
@@ -110,6 +135,57 @@ export function useProfileViewModel() {
         ? "Reviews are coming soon."
         : "No trips yet.";
 
+  const startEditing = () => {
+    if (user) {
+      setProfileForm(toProfileForm(user));
+    }
+    setEditError(null);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditError(null);
+    setIsEditing(false);
+    if (user) {
+      setProfileForm(toProfileForm(user));
+    }
+  };
+
+  const updateProfileField = (key: keyof ProfileForm, value: string) => {
+    setProfileForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  };
+
+  const saveProfile = async () => {
+    setIsSaving(true);
+    setEditError(null);
+    try {
+      const payload: UpdateCurrentUserPayload = {
+        firstName: profileForm.firstName.trim(),
+        lastName: profileForm.lastName.trim(),
+        username: profileForm.username.trim() || undefined,
+        bio: profileForm.bio.trim() || undefined,
+        avatarUrl: profileForm.avatarUrl.trim() || undefined,
+      };
+      const updated = await updateCurrentUser(payload);
+      const nextUser = {
+        ...updated,
+        followersCount: user?.followersCount ?? updated.followersCount,
+        followingCount: user?.followingCount ?? updated.followingCount,
+        tripsCount: user?.tripsCount ?? trips.length,
+      };
+      setUser(nextUser);
+      setProfileForm(toProfileForm(nextUser));
+      setIsEditing(false);
+    } catch (err: any) {
+      setEditError(err?.message ?? "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return {
     user,
     fullName,
@@ -120,8 +196,16 @@ export function useProfileViewModel() {
     stats,
     tabItems,
     activeTab,
+    cancelEditing,
+    editError,
     setActiveTab,
+    isEditing,
     emptyStateText,
+    isSaving,
+    profileForm,
+    saveProfile,
+    startEditing,
+    updateProfileField,
     isLoading,
     error,
     refresh: load,

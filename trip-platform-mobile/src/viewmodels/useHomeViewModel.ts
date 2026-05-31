@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Trip } from "../models/trip";
-import { fetchMyTrips, fetchTrips, joinTrip } from "../services/tripService";
+import {
+  fetchMyTrips,
+  fetchTrips,
+  joinTrip,
+  likeTrip,
+  unlikeTrip,
+} from "../services/tripService";
 import { fetchCurrentUser } from "../services/userService";
 import type { User } from "../models/user";
 import { followUser, unfollowUser } from "../services/followService";
@@ -34,7 +40,12 @@ export function useHomeViewModel() {
       const mergedTrips = [
         ...myTripsData,
         ...tripsData.filter((trip) => !myTripIds.has(trip.id)),
-      ];
+      ].map((trip) => ({
+        ...trip,
+        isOwner: Boolean(userData?.id && trip.hostId === userData.id),
+        hasJoined:
+          Boolean(userData?.id && trip.hostId === userData.id) || trip.hasJoined,
+      }));
 
       setTrips(mergedTrips);
       setUser(userData as User | null);
@@ -179,6 +190,45 @@ export function useHomeViewModel() {
     await load();
   };
 
+  const toggleTripLike = async (trip: Trip) => {
+    if (!trip.publicId) return;
+
+    const nextLiked = !trip.liked;
+    const delta = nextLiked ? 1 : -1;
+
+    setTrips((current) =>
+      current.map((item) =>
+        item.id === trip.id
+          ? {
+              ...item,
+              liked: nextLiked,
+              likes: Math.max((item.likes ?? 0) + delta, 0),
+            }
+          : item,
+      ),
+    );
+
+    try {
+      if (nextLiked) {
+        await likeTrip(trip.publicId);
+      } else {
+        await unlikeTrip(trip.publicId);
+      }
+    } catch {
+      setTrips((current) =>
+        current.map((item) =>
+          item.id === trip.id
+            ? {
+                ...item,
+                liked: trip.liked,
+                likes: trip.likes ?? 0,
+              }
+            : item,
+        ),
+      );
+    }
+  };
+
   return {
     activeStatusFilter,
     discoverTrips,
@@ -195,6 +245,7 @@ export function useHomeViewModel() {
     statusFilters,
     stats,
     toggleFollowHost,
+    toggleTripLike,
     collections,
     isLoading,
     error,

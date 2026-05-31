@@ -1,26 +1,14 @@
-import { API_URL } from "./AuthService";
-import { getSession } from "../storage/session";
 import type { User } from "../models/user";
+import { apiRequest } from "./apiClient";
+
+export type UpdateCurrentUserPayload = Partial<
+  Pick<User, "firstName" | "lastName" | "username" | "bio" | "avatarUrl">
+>;
 
 export async function fetchCurrentUser(): Promise<User> {
-  const session = await getSession();
-  if (!session) {
-    throw new Error("Not authenticated");
-  }
-
-  const response = await fetch(`${API_URL}/api/users/me`, {
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-    },
+  const user = await apiRequest<User>("/api/users/me", {
+    authenticated: true,
   });
-
-  const data = (await response.json().catch(() => ({}))) as any;
-
-  if (!response.ok) {
-    throw new Error(data.message ?? "Failed to fetch user");
-  }
-
-  const user = data as User;
 
   return {
     ...user,
@@ -33,4 +21,29 @@ export async function fetchCurrentUser(): Promise<User> {
     followersCount: user.followersCount ?? 0,
     followingCount: user.followingCount ?? 0,
   };
+}
+
+export async function updateCurrentUser(
+  payload: UpdateCurrentUserPayload,
+): Promise<User> {
+  const user = await apiRequest<User>("/api/users/me", {
+    authenticated: true,
+    body: payload,
+    method: "PATCH",
+  });
+
+  return {
+    ...user,
+    followersCount: user.followersCount ?? 0,
+    followingCount: user.followingCount ?? 0,
+  };
+}
+
+export async function searchUsers(query: string): Promise<User[]> {
+  return apiRequest<User[]>(
+    `/api/users/search?q=${encodeURIComponent(query.trim())}`,
+    {
+      authenticated: true,
+    },
+  );
 }

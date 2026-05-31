@@ -1,7 +1,6 @@
 import React from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import {
-  Bookmark,
   ChevronRight,
   Globe2,
   Heart,
@@ -16,15 +15,21 @@ type HomeTripFeatureCardProps = {
   trip: Trip;
   onFollowHost?: (trip: Trip) => void;
   onJoinTrip?: (trip: Trip) => void;
+  onToggleLike?: (trip: Trip) => void;
+  onOpenTrip?: (trip: Trip) => void;
 };
 
 export default function HomeTripFeatureCard({
   trip,
   onFollowHost,
   onJoinTrip,
+  onToggleLike,
+  onOpenTrip,
 }: HomeTripFeatureCardProps) {
+  const canJoin = Boolean(trip.publicId && !trip.isOwner && !trip.hasJoined);
+
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={() => onOpenTrip?.(trip)}>
       {trip.image ? (
         <Image source={{ uri: trip.image }} style={styles.image} />
       ) : (
@@ -94,14 +99,24 @@ export default function HomeTripFeatureCard({
 
         <View style={styles.footer}>
           <View style={styles.actionRow}>
-            <Heart color="#98A2B3" size={24} strokeWidth={2} />
+            <Pressable
+              hitSlop={10}
+              onPress={() => onToggleLike?.(trip)}
+              style={styles.iconAction}
+            >
+              <Heart
+                color={trip.liked ? "#FF6535" : "#98A2B3"}
+                fill={trip.liked ? "#FF6535" : "transparent"}
+                size={24}
+                strokeWidth={2}
+              />
+            </Pressable>
             <Text style={styles.actionText}>{trip.likes ?? 0}</Text>
             <MessageCircle color="#98A2B3" size={23} strokeWidth={2} />
             <Text style={styles.actionText}>2</Text>
             <Share2 color="#98A2B3" size={23} strokeWidth={2} />
           </View>
           <View style={styles.footerRight}>
-            <Bookmark color="#FFB000" fill="#FFB000" size={24} strokeWidth={2} />
             {trip.hostId && (
               <Pressable
                 style={styles.followButton}
@@ -112,18 +127,20 @@ export default function HomeTripFeatureCard({
                 </Text>
               </Pressable>
             )}
-            <Pressable
-              style={styles.viewButton}
-              onPress={() => onJoinTrip?.(trip)}
-              disabled={!trip.publicId}
-            >
-              <Text style={styles.viewButtonText}>Join</Text>
-              <ChevronRight color="#FFFFFF" size={16} strokeWidth={2.4} />
-            </Pressable>
+            {canJoin ? (
+              <Pressable
+                style={styles.viewButton}
+                onPress={() => onJoinTrip?.(trip)}
+                disabled={!trip.publicId}
+              >
+                <Text style={styles.viewButtonText}>Join</Text>
+                <ChevronRight color="#FFFFFF" size={16} strokeWidth={2.4} />
+              </Pressable>
+            ) : null}
           </View>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -321,14 +338,23 @@ const styles = StyleSheet.create({
     borderTopColor: "#F0E7DF",
     borderTopWidth: 1,
     flexDirection: "row",
+    gap: 10,
     justifyContent: "space-between",
     marginTop: 22,
     paddingTop: 20,
   },
   actionRow: {
     alignItems: "center",
+    flex: 1,
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
+    minWidth: 0,
+  },
+  iconAction: {
+    alignItems: "center",
+    height: 30,
+    justifyContent: "center",
+    width: 30,
   },
   actionText: {
     color: "#98A2B3",
@@ -339,7 +365,8 @@ const styles = StyleSheet.create({
   footerRight: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 18,
+    flexShrink: 0,
+    gap: 8,
   },
   viewButton: {
     alignItems: "center",
@@ -347,7 +374,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     flexDirection: "row",
     gap: 5,
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
     paddingVertical: 13,
   },
   viewButtonText: {
@@ -358,7 +385,7 @@ const styles = StyleSheet.create({
   followButton: {
     backgroundColor: "#FFF0EA",
     borderRadius: 18,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 13,
   },
   followButtonText: {

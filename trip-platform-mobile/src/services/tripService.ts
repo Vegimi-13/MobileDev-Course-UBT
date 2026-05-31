@@ -1,4 +1,4 @@
-import type { CreateTripPayload, Trip } from "../models/trip";
+import type { CreateTripPayload, Trip, TripPost } from "../models/trip";
 import { apiRequest } from "./apiClient";
 
 type ApiTrip = {
@@ -27,7 +27,11 @@ type ApiTrip = {
       name: string;
     };
   }>;
-  participants?: unknown[];
+  participants?: Array<{
+    userId?: string;
+    status?: "PENDING" | "ACCEPTED" | "DECLINED";
+  }>;
+  likes?: Array<{ id: string }>;
   _count?: {
     participants?: number;
     likes?: number;
@@ -88,6 +92,7 @@ export const mapTrip = (trip: ApiTrip): Trip => {
     date: `${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}`,
     tags: trip.tags?.map((entry) => entry.tag?.name).filter(Boolean) as string[],
     likes: trip._count?.likes ?? 0,
+    liked: Boolean(trip.likes?.length),
     joined: `${membersJoined}/${maxMembers ?? "-" } joined`,
     spotsLeft: maxMembers ? Math.max(maxMembers - membersJoined, 0) : undefined,
     status: getTripStatus(trip),
@@ -98,11 +103,14 @@ export const mapTrip = (trip: ApiTrip): Trip => {
     category: getCategory(categoryName),
     membersJoined,
     maxMembers,
+    hasJoined: trip.participants?.some((entry) => entry.status === "ACCEPTED"),
   };
 };
 
 export async function fetchTrips(): Promise<Trip[]> {
-  const trips = await apiRequest<ApiTrip[]>("/api/trips/public");
+  const trips = await apiRequest<ApiTrip[]>("/api/trips/public", {
+    authenticated: true,
+  }).catch(() => apiRequest<ApiTrip[]>("/api/trips/public"));
   return trips.map(mapTrip);
 }
 
@@ -111,6 +119,13 @@ export async function fetchMyTrips(): Promise<Trip[]> {
     authenticated: true,
   });
   return trips.map(mapTrip);
+}
+
+export async function fetchTrip(publicId: string): Promise<Trip> {
+  const trip = await apiRequest<ApiTrip>(`/api/trips/${publicId}`, {
+    authenticated: true,
+  });
+  return mapTrip(trip);
 }
 
 export async function createTrip(payload: CreateTripPayload): Promise<Trip> {
@@ -125,6 +140,45 @@ export async function createTrip(payload: CreateTripPayload): Promise<Trip> {
 export async function joinTrip(publicId: string) {
   return apiRequest(`/api/trips/${publicId}/join`, {
     authenticated: true,
+    method: "POST",
+  });
+}
+
+export async function likeTrip(publicId: string) {
+  return apiRequest<{ liked: true }>(`/api/likes/trips/${publicId}`, {
+    authenticated: true,
+    method: "POST",
+  });
+}
+
+export async function unlikeTrip(publicId: string) {
+  return apiRequest<{ liked: false }>(`/api/likes/trips/${publicId}`, {
+    authenticated: true,
+    method: "DELETE",
+  });
+}
+
+export async function fetchTripPosts(publicId: string): Promise<TripPost[]> {
+  return apiRequest<TripPost[]>(`/api/trips/${publicId}/posts`, {
+    authenticated: true,
+  });
+}
+
+export async function createTripPost(
+  publicId: string,
+  payload: { body: string; imageUrl?: string },
+): Promise<TripPost> {
+  return apiRequest<TripPost>(`/api/trips/${publicId}/posts`, {
+    authenticated: true,
+    body: payload,
+    method: "POST",
+  });
+}
+
+export async function inviteUserToTrip(publicId: string, userId: string) {
+  return apiRequest(`/api/trips/${publicId}/invites`, {
+    authenticated: true,
+    body: { userId },
     method: "POST",
   });
 }

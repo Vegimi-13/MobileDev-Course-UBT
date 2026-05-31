@@ -16,9 +16,10 @@ import { useHomeViewModel } from "../viewmodels/useHomeViewModel";
 
 type HomeScreenProps = {
   apiUrl: string;
+  onOpenTrip?: (publicId: string) => void;
 };
 
-export function HomeScreen({ apiUrl }: HomeScreenProps) {
+export function HomeScreen({ apiUrl, onOpenTrip }: HomeScreenProps) {
   const {
     activeStatusFilter,
     discoverTrips,
@@ -32,6 +33,7 @@ export function HomeScreen({ apiUrl }: HomeScreenProps) {
     setActiveStatusFilter,
     statusFilters,
     toggleFollowHost,
+    toggleTripLike,
     user,
   } = useHomeViewModel();
 
@@ -48,6 +50,8 @@ export function HomeScreen({ apiUrl }: HomeScreenProps) {
             trip={item}
             onFollowHost={toggleFollowHost}
             onJoinTrip={requestJoinTrip}
+            onOpenTrip={(trip) => trip.publicId && onOpenTrip?.(trip.publicId)}
+            onToggleLike={toggleTripLike}
           />
         )}
         ListHeaderComponent={
@@ -117,6 +121,8 @@ export function HomeScreen({ apiUrl }: HomeScreenProps) {
                     compact
                     onFollowHost={toggleFollowHost}
                     onJoinTrip={requestJoinTrip}
+                    onOpenTrip={(trip) => trip.publicId && onOpenTrip?.(trip.publicId)}
+                    onToggleLike={toggleTripLike}
                   />
                 ))}
               </ScrollView>

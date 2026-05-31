@@ -14,7 +14,11 @@ import { Globe2, Lock, Search } from "lucide-react-native";
 import ExploreTripCard from "../components/ExploreTripCard";
 import { useExploreViewModel } from "../viewmodels/useExploreViewModel";
 
-export function ExploreScreen() {
+type ExploreScreenProps = {
+  onOpenTrip?: (publicId: string) => void;
+};
+
+export function ExploreScreen({ onOpenTrip }: ExploreScreenProps) {
   const {
     accessFilter,
     accessFilters,
@@ -30,6 +34,7 @@ export function ExploreScreen() {
     setCategoryFilter,
     setQuery,
     toggleFollowHost,
+    toggleTripLike,
   } = useExploreViewModel();
 
   return (
@@ -47,6 +52,8 @@ export function ExploreScreen() {
             trip={item}
             onFollowHost={toggleFollowHost}
             onJoinTrip={requestJoinTrip}
+            onOpenTrip={(trip) => trip.publicId && onOpenTrip?.(trip.publicId)}
+            onToggleLike={toggleTripLike}
           />
         )}
         ListHeaderComponent={

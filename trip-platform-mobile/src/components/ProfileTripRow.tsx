@@ -11,6 +11,7 @@ import type { Trip } from "../models/trip";
 
 type ProfileTripRowProps = {
   trip: Trip;
+  onOpenTrip?: (trip: Trip) => void;
 };
 
 const STATUS_STYLES = {
@@ -41,7 +42,7 @@ const VISIBILITY_STYLES = {
   },
 } as const;
 
-export default function ProfileTripRow({ trip }: ProfileTripRowProps) {
+export default function ProfileTripRow({ trip, onOpenTrip }: ProfileTripRowProps) {
   const status = trip.status ?? "Upcoming";
   const visibility = trip.visibility ?? "Public";
   const visibilityConfig = VISIBILITY_STYLES[visibility];
@@ -49,7 +50,7 @@ export default function ProfileTripRow({ trip }: ProfileTripRowProps) {
   const VisibilityIcon = visibilityConfig.Icon;
 
   return (
-    <Pressable style={styles.card}>
+    <Pressable style={styles.card} onPress={() => onOpenTrip?.(trip)}>
       {trip.image ? (
         <Image source={{ uri: trip.image }} style={styles.image} />
       ) : (

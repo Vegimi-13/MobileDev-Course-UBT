@@ -5,6 +5,7 @@ import { ExploreScreen } from "./ExploreScreen";
 import { HomeScreen } from "./HomeScreen";
 import { NotificationsScreen } from "./NotificationsScreen";
 import { ProfileScreen } from "./ProfileScreen";
+import { TripDetailScreen } from "./TripDetailScreen";
 import BottomNav from "../components/BottomNav";
 import { useMainViewModel } from "../viewmodels/useMainViewModel";
 
@@ -14,24 +15,43 @@ type MainAppProps = {
 };
 
 export function MainApp({ apiUrl, onLogout }: MainAppProps) {
-  const { activeTab, unreadCount, selectTab } = useMainViewModel();
+  const {
+    activeTab,
+    openTripPublicId,
+    unreadCount,
+    closeTrip,
+    openTrip,
+    selectTab,
+  } = useMainViewModel();
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {activeTab === "home" && <HomeScreen apiUrl={apiUrl} />}
-        {activeTab === "explore" && <ExploreScreen />}
-        {activeTab === "alerts" && <NotificationsScreen onLogout={onLogout} />}
-        {activeTab === "profile" && <ProfileScreen onLogout={onLogout} />}
-        {activeTab === "add" && (
-          <CreateTripScreen
-            onDone={() => selectTab("home")}
-            onExplore={() => selectTab("explore")}
-          />
+        {openTripPublicId ? (
+          <TripDetailScreen publicId={openTripPublicId} onBack={closeTrip} />
+        ) : (
+          <>
+            {activeTab === "home" && (
+              <HomeScreen apiUrl={apiUrl} onOpenTrip={openTrip} />
+            )}
+            {activeTab === "explore" && <ExploreScreen onOpenTrip={openTrip} />}
+            {activeTab === "alerts" && (
+              <NotificationsScreen onLogout={onLogout} />
+            )}
+            {activeTab === "profile" && (
+              <ProfileScreen onLogout={onLogout} onOpenTrip={openTrip} />
+            )}
+            {activeTab === "add" && (
+              <CreateTripScreen
+                onDone={() => selectTab("home")}
+                onExplore={() => selectTab("explore")}
+              />
+            )}
+          </>
         )}
       </View>
 
-      {activeTab !== "add" && (
+      {activeTab !== "add" && !openTripPublicId && (
         <BottomNav
           activeTab={activeTab}
           onSelect={selectTab}

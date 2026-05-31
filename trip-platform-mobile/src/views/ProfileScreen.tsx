@@ -17,25 +17,36 @@ import {
   Settings,
   Star,
 } from "lucide-react-native";
+import EditProfileSheet from "../components/EditProfileSheet";
 import ProfileTripRow from "../components/ProfileTripRow";
 import { useProfileViewModel } from "../viewmodels/useProfileViewModel";
 
 type ProfileScreenProps = {
   onLogout: () => void;
+  onOpenTrip?: (publicId: string) => void;
 };
 
-export function ProfileScreen({ onLogout }: ProfileScreenProps) {
+export function ProfileScreen({ onLogout, onOpenTrip }: ProfileScreenProps) {
   const {
     user,
     error,
     trips,
+    allTrips,
     fullName,
     handle,
     badgeItems,
     stats,
     tabItems,
     activeTab,
+    cancelEditing,
+    editError,
+    isEditing,
+    isSaving,
+    profileForm,
+    saveProfile,
     setActiveTab,
+    startEditing,
+    updateProfileField,
     emptyStateText,
   } = useProfileViewModel();
 
@@ -74,7 +85,7 @@ export function ProfileScreen({ onLogout }: ProfileScreenProps) {
               </Pressable>
             </View>
 
-            <Pressable style={styles.editButton}>
+            <Pressable style={styles.editButton} onPress={startEditing}>
               <Pencil color="#FFFFFF" size={16} strokeWidth={2.1} />
               <Text style={styles.editButtonText}>Edit Profile</Text>
             </Pressable>
@@ -152,15 +163,69 @@ export function ProfileScreen({ onLogout }: ProfileScreenProps) {
             ))}
           </View>
 
-          <View style={styles.tripList}>
-            {trips.length > 0 ? (
-              trips.map((trip) => <ProfileTripRow key={trip.id} trip={trip} />)
-            ) : (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>{emptyStateText}</Text>
-              </View>
-            )}
-          </View>
+          {activeTab === "trips" && (
+            <View style={styles.tripList}>
+              {trips.length > 0 ? (
+                trips.map((trip) => (
+                  <ProfileTripRow
+                    key={trip.id}
+                    trip={trip}
+                    onOpenTrip={(item) =>
+                      item.publicId && onOpenTrip?.(item.publicId)
+                    }
+                  />
+                ))
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>{emptyStateText}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {activeTab === "photos" && (
+            <View style={styles.photoGrid}>
+              {allTrips.filter((trip) => trip.image).length > 0 ? (
+                allTrips.filter((trip) => trip.image).slice(0, 9).map((trip) => (
+                  <Image
+                    key={trip.id}
+                    source={{ uri: trip.image }}
+                    style={styles.photoTile}
+                  />
+                ))
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>{emptyStateText}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {activeTab === "reviews" && (
+            <View style={styles.reviewList}>
+              {allTrips.length > 0 ? (
+                [...allTrips]
+                  .sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
+                  .slice(0, 2)
+                  .map((trip) => (
+                    <View key={trip.id} style={styles.reviewCard}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={styles.reviewTitle}>{trip.title}</Text>
+                        <Text style={styles.reviewStars}>*****</Text>
+                      </View>
+                      <Text style={styles.reviewMeta}>{trip.date}</Text>
+                      <Text style={styles.reviewBody}>
+                        A well-loved trip with {trip.likes ?? 0} likes from the crew.
+                      </Text>
+                    </View>
+                  ))
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>{emptyStateText}</Text>
+                </View>
+              )}
+            </View>
+          )}
 
           <Pressable style={styles.logoutButton} onPress={onLogout}>
             <Text style={styles.logoutText}>Sign out</Text>
@@ -169,6 +234,15 @@ export function ProfileScreen({ onLogout }: ProfileScreenProps) {
           <View style={styles.footerSpacer} />
         </View>
       </ScrollView>
+      <EditProfileSheet
+        error={editError}
+        form={profileForm}
+        isSaving={isSaving}
+        onCancel={cancelEditing}
+        onChange={updateProfileField}
+        onSave={saveProfile}
+        visible={isEditing}
+      />
       <StatusBar style="dark" />
     </SafeAreaView>
   );
@@ -184,8 +258,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#FF6A3D",
-    height: 188,
-    overflow: "hidden",
+    height: 222,
+    overflow: "visible",
     paddingHorizontal: 18,
     paddingTop: 16,
   },
@@ -231,10 +305,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 16,
+    marginTop: 22,
   },
   avatarShell: {
-    marginBottom: -64,
+    marginBottom: -58,
     position: "relative",
   },
   avatar: {
@@ -260,11 +334,13 @@ const styles = StyleSheet.create({
   editButton: {
     alignItems: "center",
     backgroundColor: "#FF6A3D",
+    borderColor: "rgba(255,255,255,0.55)",
     borderRadius: 18,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 8,
     justifyContent: "center",
-    marginBottom: -22,
+    marginBottom: -16,
     minHeight: 54,
     paddingHorizontal: 20,
   },
@@ -275,7 +351,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 18,
-    paddingTop: 78,
+    paddingTop: 74,
   },
   name: {
     color: "#26233B",
@@ -389,6 +465,57 @@ const styles = StyleSheet.create({
   },
   tripList: {
     marginTop: 20,
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 20,
+  },
+  photoTile: {
+    aspectRatio: 1,
+    borderRadius: 16,
+    width: "31.8%",
+  },
+  reviewList: {
+    gap: 12,
+    marginTop: 20,
+  },
+  reviewCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#ECE3DA",
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 18,
+  },
+  reviewHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between",
+  },
+  reviewTitle: {
+    color: "#26233B",
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  reviewStars: {
+    color: "#F4AA13",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  reviewMeta: {
+    color: "#98A0B3",
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+  reviewBody: {
+    color: "#667085",
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 12,
   },
   emptyCard: {
     alignItems: "center",

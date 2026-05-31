@@ -5,9 +5,16 @@ export type TabKey = "home" | "explore" | "add" | "alerts" | "profile";
 
 export function useMainViewModel(initial: TabKey = "home") {
   const [activeTab, setActiveTab] = useState<TabKey>(initial);
+  const [openTripPublicId, setOpenTripPublicId] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const selectTab = (tab: TabKey) => setActiveTab(tab);
+  const selectTab = (tab: TabKey) => {
+    setOpenTripPublicId(null);
+    setActiveTab(tab);
+  };
+
+  const openTrip = (publicId: string) => setOpenTripPublicId(publicId);
+  const closeTrip = () => setOpenTripPublicId(null);
 
   useEffect(() => {
     fetchNotifications()
@@ -17,6 +24,9 @@ export function useMainViewModel(initial: TabKey = "home") {
 
   return {
     activeTab,
+    closeTrip,
+    openTrip,
+    openTripPublicId,
     unreadCount,
     selectTab,
   } as const;

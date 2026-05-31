@@ -10,6 +10,7 @@ export type Trip = {
   date?: string;
   tags?: string[];
   likes?: number;
+  liked?: boolean;
   joined?: string;
   spotsLeft?: number;
   status?: "Upcoming" | "Ongoing" | "Completed";
@@ -22,6 +23,22 @@ export type Trip = {
   membersJoined?: number;
   maxMembers?: number;
   isFollowingHost?: boolean;
+  isOwner?: boolean;
+  hasJoined?: boolean;
+};
+
+export type TripPost = {
+  id: string;
+  body: string;
+  imageUrl?: string;
+  createdAt: string;
+  author: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    username?: string;
+    avatarUrl?: string;
+  };
 };
 
 export type CreateTripPayload = {

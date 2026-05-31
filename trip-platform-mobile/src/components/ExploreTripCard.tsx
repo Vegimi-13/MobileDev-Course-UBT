@@ -8,6 +8,8 @@ type ExploreTripCardProps = {
   compact?: boolean;
   onFollowHost?: (trip: Trip) => void;
   onJoinTrip?: (trip: Trip) => void;
+  onToggleLike?: (trip: Trip) => void;
+  onOpenTrip?: (trip: Trip) => void;
 };
 
 const CATEGORY_ICON = {
@@ -22,13 +24,18 @@ export default function ExploreTripCard({
   compact = false,
   onFollowHost,
   onJoinTrip,
+  onToggleLike,
+  onOpenTrip,
 }: ExploreTripCardProps) {
   const VisibilityIcon = trip.visibility === "Private" ? Lock : Globe2;
   const joined = trip.membersJoined ?? Number(trip.joined?.split("/")[0]) ?? 0;
   const maxMembers = trip.maxMembers ?? Number(trip.joined?.split("/")[1]?.split(" ")[0]) ?? 0;
 
   return (
-    <Pressable style={[styles.card, compact && styles.compactCard]}>
+    <Pressable
+      style={[styles.card, compact && styles.compactCard]}
+      onPress={() => onOpenTrip?.(trip)}
+    >
       {trip.image ? (
         <Image source={{ uri: trip.image }} style={styles.image} />
       ) : (
@@ -65,10 +72,19 @@ export default function ExploreTripCard({
           </Text>
         </View>
         <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <Heart color="#FFFFFF" fill="#FFFFFF" size={12} strokeWidth={1.5} />
+          <Pressable
+            hitSlop={8}
+            onPress={() => onToggleLike?.(trip)}
+            style={styles.metaItem}
+          >
+            <Heart
+              color="#FFFFFF"
+              fill={trip.liked ? "#FF6535" : "#FFFFFF"}
+              size={12}
+              strokeWidth={1.5}
+            />
             <Text style={styles.metaText}>{trip.likes ?? 0}</Text>
-          </View>
+          </Pressable>
           <View style={styles.metaItem}>
             <Users color="#FFFFFF" size={12} strokeWidth={2} />
             <Text style={styles.metaText}>{joined}/{maxMembers}</Text>
@@ -86,7 +102,7 @@ export default function ExploreTripCard({
                 </Text>
               </Pressable>
             )}
-            {trip.publicId && (
+            {trip.publicId && !trip.isOwner && !trip.hasJoined && (
               <Pressable
                 onPress={() => onJoinTrip?.(trip)}
                 style={styles.primaryAction}

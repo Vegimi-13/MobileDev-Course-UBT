@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Trip } from "../models/trip";
-import { fetchTrips, joinTrip } from "../services/tripService";
+import { fetchTrips, joinTrip, likeTrip, unlikeTrip } from "../services/tripService";
 import { followUser, unfollowUser } from "../services/followService";
+import { fetchCurrentUser } from "../services/userService";
 
 type ExploreAccessFilter = "All Trips" | "Open" | "Public";
 type ExploreCategoryFilter = "All" | "Beach" | "Mountains" | "City" | "Adventure";
@@ -20,7 +21,19 @@ export function useExploreViewModel() {
     setIsLoading(true);
     setError(null);
     try {
-      setTrips(await fetchTrips());
+      const [tripsData, userData] = await Promise.all([
+        fetchTrips(),
+        fetchCurrentUser().catch(() => null),
+      ]);
+      setTrips(
+        tripsData.map((trip) => ({
+          ...trip,
+          isOwner: Boolean(userData?.id && trip.hostId === userData.id),
+          hasJoined:
+            Boolean(userData?.id && trip.hostId === userData.id) ||
+            trip.hasJoined,
+        })),
+      );
     } catch (err: any) {
       setError(err?.message ?? "Failed to load explore trips");
     } finally {
@@ -97,6 +110,45 @@ export function useExploreViewModel() {
     await load();
   };
 
+  const toggleTripLike = async (trip: Trip) => {
+    if (!trip.publicId) return;
+
+    const nextLiked = !trip.liked;
+    const delta = nextLiked ? 1 : -1;
+
+    setTrips((current) =>
+      current.map((item) =>
+        item.id === trip.id
+          ? {
+              ...item,
+              liked: nextLiked,
+              likes: Math.max((item.likes ?? 0) + delta, 0),
+            }
+          : item,
+      ),
+    );
+
+    try {
+      if (nextLiked) {
+        await likeTrip(trip.publicId);
+      } else {
+        await unlikeTrip(trip.publicId);
+      }
+    } catch {
+      setTrips((current) =>
+        current.map((item) =>
+          item.id === trip.id
+            ? {
+                ...item,
+                liked: trip.liked,
+                likes: trip.likes ?? 0,
+              }
+            : item,
+        ),
+      );
+    }
+  };
+
   return {
     accessFilter,
     accessFilters,
@@ -112,5 +164,6 @@ export function useExploreViewModel() {
     setCategoryFilter,
     setQuery,
     toggleFollowHost,
+    toggleTripLike,
   } as const;
 }
