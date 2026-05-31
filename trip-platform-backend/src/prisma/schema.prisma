@@ -19,6 +19,8 @@ model User {
   firstName String
   lastName  String
   username  String?  @unique
+  bio       String?
+  avatarUrl String?
   password  String
   createdAt DateTime @default(now())
 
@@ -29,6 +31,7 @@ model User {
   participations TripParticipant[]
   photos         Photo[]
   likes          Like[]
+  tripPosts      TripPost[]
 
   following Follow[] @relation("UserFollowing")
   followers Follow[] @relation("UserFollowers")
@@ -62,6 +65,7 @@ model Trip {
   title       String
   description String?
   destination String
+  coverImageUrl String?
 
   startDate   DateTime
   endDate     DateTime
@@ -79,6 +83,7 @@ model Trip {
   participants TripParticipant[]
   photos       Photo[]
   likes        Like[]
+  posts        TripPost[]
   notifications Notification[]
 
   categoryId String?
@@ -126,6 +131,20 @@ model Photo {
   user User @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
 
   likes Like[]
+}
+
+model TripPost {
+  id        String   @id @default(uuid())
+  body      String
+  imageUrl  String?
+  tripId    String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  trip   Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, createdAt])
 }
 
 //////////////////////
@@ -254,4 +273,3 @@ enum NotificationType {
   LIKE
   COMMENT
 }
-

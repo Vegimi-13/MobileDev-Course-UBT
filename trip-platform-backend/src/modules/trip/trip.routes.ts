@@ -10,6 +10,9 @@ router.post("/", authenticate, controller.createTrip);
 router.get("/public", controller.getPublicTrips);
 router.get("/me", authenticate, controller.getMyTrips);
 router.get("/:publicId/requests", authenticate, controller.getPendingJoinRequests);
+router.get("/:publicId/posts", authenticate, controller.getTripPosts);
+router.post("/:publicId/posts", authenticate, controller.createTripPost);
+router.post("/:publicId/invites", authenticate, controller.inviteUserToTrip);
 router.patch(
   "/:publicId/participants/:userId/approve",
   authenticate,

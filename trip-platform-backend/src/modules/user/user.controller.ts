@@ -48,6 +48,23 @@ export const updateProfile = async (
   }
 };
 
+export const updateCurrentUserProfile = async (
+  req: Request<{}, {}, UpdateProfileBody>,
+  res: Response,
+) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const data = updateProfileSchema.parse(req.body);
+    const updated = await service.updateProfile(req.user.id, data);
+    res.json(updated);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
     if (!req.user?.id) {
@@ -57,5 +74,19 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     res.json(user);
   } catch (err: any) {
     res.status(404).json({ message: err.message });
+  }
+};
+
+export const searchUsers = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const query = typeof req.query.q === "string" ? req.query.q : "";
+    const users = await service.searchUsers(req.user.id, query);
+    res.json(users);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
   }
 };

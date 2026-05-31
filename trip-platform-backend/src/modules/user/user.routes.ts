@@ -6,12 +6,12 @@ const router = Router();
 
 // Get current authenticated user profile
 router.get("/me", authenticate, controller.getCurrentUser);
+router.patch("/me", authenticate, controller.updateCurrentUserProfile);
+router.get("/search", authenticate, controller.searchUsers);
+router.get("/username/:username", controller.getProfileByUsername);
 
 // Get user profile by ID
 router.get("/:userId", controller.getProfile);
-
-// Get user profile by username
-router.get("/username/:username", controller.getProfileByUsername);
 
 // Update user profile (requires authentication)
 router.put("/:userId", authenticate, controller.updateProfile);

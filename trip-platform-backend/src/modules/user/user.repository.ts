@@ -9,6 +9,8 @@ export const findUserById = (userId: string) => {
       firstName: true,
       lastName: true,
       username: true,
+      bio: true,
+      avatarUrl: true,
       createdAt: true,
     },
   });
@@ -23,6 +25,8 @@ export const findUserByUsername = (username: string) => {
       firstName: true,
       lastName: true,
       username: true,
+      bio: true,
+      avatarUrl: true,
       createdAt: true,
     },
   });
@@ -38,6 +42,8 @@ export const updateUser = (userId: string, data: any) => {
       firstName: true,
       lastName: true,
       username: true,
+      bio: true,
+      avatarUrl: true,
       createdAt: true,
     },
   });
@@ -52,7 +58,59 @@ export const findUserByEmail = (email: string) => {
       firstName: true,
       lastName: true,
       username: true,
+      bio: true,
+      avatarUrl: true,
       createdAt: true,
     },
+  });
+};
+
+export const searchUsers = (query: string, currentUserId: string) => {
+  return prisma.user.findMany({
+    where: {
+      id: {
+        not: currentUserId,
+      },
+      OR: [
+        {
+          firstName: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          lastName: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          username: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+      ],
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      username: true,
+      bio: true,
+      avatarUrl: true,
+      createdAt: true,
+    },
+    orderBy: {
+      firstName: "asc",
+    },
+    take: 20,
   });
 };

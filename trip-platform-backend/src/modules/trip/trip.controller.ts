@@ -2,9 +2,32 @@
 
 
 import { Request, Response } from "express"
-import { createTripSchema, getPublicTripsFilterSchema } from "./trip.validation"
+import {
+  createTripPostSchema,
+  createTripSchema,
+  getPublicTripsFilterSchema,
+  inviteTripUserSchema,
+} from "./trip.validation"
 import * as service from "./trip.service"
 import { TripServiceError } from "./trip.service";
+import { verifyAccessToken } from "../../utils/jwt";
+
+const getOptionalViewerId = (req: Request) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length)
+    : undefined;
+
+  if (!token) {
+    return undefined;
+  }
+
+  try {
+    return verifyAccessToken(token).userId;
+  } catch {
+    return undefined;
+  }
+};
 
 export const createTrip = async (req: Request, res: Response) => {
   try {
@@ -40,7 +63,10 @@ export const getPublicTrips = async (_req: Request, res: Response) => {
         : undefined,
     });
 
-    const trips = await service.getPublicTrips(parsedFilters);
+    const trips = await service.getPublicTrips(
+      parsedFilters,
+      getOptionalViewerId(_req),
+    );
 
     res.json(trips);
   } catch (err: any) {
@@ -55,7 +81,10 @@ export const getTripByPublicId = async (
   try {
     const { publicId } = req.params;
 
-    const trip = await service.getTripByPublicId(publicId);
+    const trip = await service.getTripByPublicId(
+      publicId,
+      getOptionalViewerId(req),
+    );
 
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
@@ -173,5 +202,75 @@ export const declineJoinRequest = async (
     }
 
     res.status(500).json({ message: err.message });
+  }
+};
+
+export const getTripPosts = async (
+  req: Request<{ publicId: string }>,
+  res: Response,
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const posts = await service.getTripPosts(req.user.id, req.params.publicId);
+    res.json(posts);
+  } catch (err: any) {
+    if (err instanceof TripServiceError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const createTripPost = async (
+  req: Request<{ publicId: string }>,
+  res: Response,
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const data = createTripPostSchema.parse(req.body);
+    const post = await service.createTripPost(
+      req.user.id,
+      req.params.publicId,
+      data,
+    );
+    res.status(201).json(post);
+  } catch (err: any) {
+    if (err instanceof TripServiceError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const inviteUserToTrip = async (
+  req: Request<{ publicId: string }>,
+  res: Response,
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const data = inviteTripUserSchema.parse(req.body);
+    const participant = await service.inviteUserToTrip(
+      req.user.id,
+      req.params.publicId,
+      data.userId,
+    );
+    res.status(201).json(participant);
+  } catch (err: any) {
+    if (err instanceof TripServiceError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+
+    res.status(400).json({ message: err.message });
   }
 };

@@ -43,3 +43,7 @@ export const getCurrentUser = async (userId: string) => {
   }
   return user;
 };
+
+export const searchUsers = (currentUserId: string, query = "") => {
+  return repo.searchUsers(query.trim(), currentUserId);
+};

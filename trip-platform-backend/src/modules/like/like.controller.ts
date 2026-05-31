@@ -40,6 +40,28 @@ export const unlikeTrip = async (
   }
 };
 
+export const getTripLikeStatus = async (
+  req: Request<{ publicId: string }>,
+  res: Response,
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const result = await service.getTripLikeStatus(
+      req.user.id,
+      req.params.publicId,
+    );
+    res.json(result);
+  } catch (err: any) {
+    if (err instanceof LikeServiceError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const likePhoto = async (
   req: Request<{ photoId: string }>,
   res: Response,

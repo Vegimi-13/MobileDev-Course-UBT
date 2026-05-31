@@ -72,6 +72,23 @@ export const unlikeTrip = async (userId: string, publicId: string) => {
   return { liked: false };
 };
 
+export const getTripLikeStatus = async (userId: string, publicId: string) => {
+  const trip = await likeRepo.findTripByPublicId(publicId);
+
+  if (!trip) {
+    throw new LikeServiceError("Trip not found", 404);
+  }
+
+  await ensureCanAccessTrip(trip, userId);
+
+  const existingLike = await likeRepo.findTripLike(trip.id, userId);
+
+  return {
+    liked: Boolean(existingLike),
+    likesCount: trip._count.likes,
+  };
+};
+
 export const likePhoto = async (userId: string, photoId: string) => {
   const photo = await likeRepo.findPhotoById(photoId);
 

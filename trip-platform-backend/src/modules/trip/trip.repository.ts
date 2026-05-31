@@ -6,14 +6,32 @@ export const createTrip = (data: Prisma.TripCreateInput) => {
   return prisma.trip.create({ data });
 };
 
-export const findTripByPublicId = (publicId: string) => {
+export const findTripByPublicId = (publicId: string, viewerId?: string) => {
   return prisma.trip.findUnique({
     where: { publicId },
     include: {
       creator: true,
+      category: true,
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
       participants: {
         include: { user: true },
       },
+      ...(viewerId
+        ? {
+            likes: {
+              where: {
+                userId: viewerId,
+              },
+              select: {
+                id: true,
+              },
+            },
+          }
+        : {}),
       photos: true,
       _count: {
         select: {
@@ -38,6 +56,37 @@ export const findTripForJoin = (publicId: string) => {
           },
         },
       },
+    },
+  });
+};
+
+export const findTripAccessRecord = (publicId: string) => {
+  return prisma.trip.findUnique({
+    where: { publicId },
+    include: {
+      participants: true,
+      _count: {
+        select: {
+          participants: {
+            where: {
+              status: "ACCEPTED",
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+export const findUserById = (userId: string) => {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      username: true,
+      avatarUrl: true,
     },
   });
 };
@@ -114,7 +163,7 @@ export const findPendingTripParticipants = (tripId: string) => {
 export const updateTripParticipantStatus = (
   tripId: string,
   userId: string,
-  status: "ACCEPTED" | "DECLINED",
+  status: "PENDING" | "ACCEPTED" | "DECLINED",
 ) => {
   return prisma.tripParticipant.update({
     where: {
@@ -141,7 +190,56 @@ export const updateTripParticipantStatus = (
   });
 };
 
-export const findPublicTrips = (filters: GetPublicTripsFilterInput) => {
+export const findTripPosts = (tripId: string) => {
+  return prisma.tripPost.findMany({
+    where: { tripId },
+    include: {
+      author: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+
+export const createTripPost = (
+  tripId: string,
+  authorId: string,
+  data: { body: string; imageUrl?: string },
+) => {
+  return prisma.tripPost.create({
+    data: {
+      body: data.body,
+      imageUrl: data.imageUrl ?? null,
+      trip: { connect: { id: tripId } },
+      author: { connect: { id: authorId } },
+    },
+    include: {
+      author: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  });
+};
+
+export const findPublicTrips = (
+  filters: GetPublicTripsFilterInput,
+  viewerId?: string,
+) => {
   const { categoryId, tags } = filters;
 
   return prisma.trip.findMany({
@@ -174,6 +272,18 @@ export const findPublicTrips = (filters: GetPublicTripsFilterInput) => {
           likes: true,
         },
       },
+      ...(viewerId
+        ? {
+            likes: {
+              where: {
+                userId: viewerId,
+              },
+              select: {
+                id: true,
+              },
+            },
+          }
+        : {}),
     },
     orderBy: {
       createdAt: "desc",
@@ -199,9 +309,23 @@ export const findTripsByUser = (userId: string) => {
     },
     include: {
       creator: true,
+      category: true,
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
       participants: {
         where: {
           userId,
+        },
+      },
+      likes: {
+        where: {
+          userId,
+        },
+        select: {
+          id: true,
         },
       },
       _count: {

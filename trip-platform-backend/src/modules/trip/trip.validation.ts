@@ -16,6 +16,8 @@ export const createTripSchema = z.object({
     .max(500, "Description too long")
     .optional(),
 
+  coverImageUrl: z.string().url("Invalid cover image URL").optional(),
+
   startDate: z
     .string()
     .refine((val) => !isNaN(Date.parse(val)), {
@@ -40,8 +42,9 @@ export const createTripSchema = z.object({
     .optional(),
 
   categoryId: z.string().uuid().optional(),
+  categoryName: z.string().min(1).max(60).optional(),
 
-  tags: z.array(z.string()).optional(), // tag IDs
+  tags: z.array(z.string()).optional(), // tag IDs or tag names
 })
 .refine((data) => {
   return new Date(data.endDate) >= new Date(data.startDate);
@@ -60,3 +63,21 @@ export const getPublicTripsFilterSchema = z.object({
 export type GetPublicTripsFilterInput = z.infer<
   typeof getPublicTripsFilterSchema
 >;
+
+export const createTripPostSchema = z
+  .object({
+    body: z.string().min(1).max(500),
+    imageUrl: z.string().url("Invalid image URL").optional(),
+  })
+  .refine((data) => data.body.trim().length > 0, {
+    message: "Post body is required",
+    path: ["body"],
+  });
+
+export type CreateTripPostInput = z.infer<typeof createTripPostSchema>;
+
+export const inviteTripUserSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+export type InviteTripUserInput = z.infer<typeof inviteTripUserSchema>;

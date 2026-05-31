@@ -4,6 +4,8 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   username?: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
   createdAt: Date;
 }
 
@@ -11,6 +13,8 @@ export interface UpdateProfileBody {
   firstName?: string | undefined;
   lastName?: string | undefined;
   username?: string | undefined;
+  bio?: string | undefined;
+  avatarUrl?: string | undefined;
 }
 
 export interface UserDetailResponse {
@@ -19,5 +23,7 @@ export interface UserDetailResponse {
   firstName: string;
   lastName: string;
   username?: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
   createdAt: Date;
 }
