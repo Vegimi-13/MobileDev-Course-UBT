@@ -14,12 +14,24 @@ import type { Trip } from "../models/trip";
 
 type HomeTripFeatureCardProps = {
   trip: Trip;
+  onFollowHost?: (trip: Trip) => void;
+  onJoinTrip?: (trip: Trip) => void;
 };
 
-export default function HomeTripFeatureCard({ trip }: HomeTripFeatureCardProps) {
+export default function HomeTripFeatureCard({
+  trip,
+  onFollowHost,
+  onJoinTrip,
+}: HomeTripFeatureCardProps) {
   return (
     <View style={styles.card}>
-      <Image source={{ uri: trip.image }} style={styles.image} />
+      {trip.image ? (
+        <Image source={{ uri: trip.image }} style={styles.image} />
+      ) : (
+        <View style={styles.coverFallback}>
+          <Text style={styles.coverFallbackText}>{trip.category ?? "Trip"}</Text>
+        </View>
+      )}
       <View style={styles.topBadges}>
         <View style={styles.publicBadge}>
           <Globe2 color="#FFFFFF" size={13} strokeWidth={2} />
@@ -90,8 +102,22 @@ export default function HomeTripFeatureCard({ trip }: HomeTripFeatureCardProps) 
           </View>
           <View style={styles.footerRight}>
             <Bookmark color="#FFB000" fill="#FFB000" size={24} strokeWidth={2} />
-            <Pressable style={styles.viewButton}>
-              <Text style={styles.viewButtonText}>View</Text>
+            {trip.hostId && (
+              <Pressable
+                style={styles.followButton}
+                onPress={() => onFollowHost?.(trip)}
+              >
+                <Text style={styles.followButtonText}>
+                  {trip.isFollowingHost ? "Following" : "Follow"}
+                </Text>
+              </Pressable>
+            )}
+            <Pressable
+              style={styles.viewButton}
+              onPress={() => onJoinTrip?.(trip)}
+              disabled={!trip.publicId}
+            >
+              <Text style={styles.viewButtonText}>Join</Text>
               <ChevronRight color="#FFFFFF" size={16} strokeWidth={2.4} />
             </Pressable>
           </View>
@@ -117,6 +143,18 @@ const styles = StyleSheet.create({
   image: {
     height: 286,
     width: "100%",
+  },
+  coverFallback: {
+    alignItems: "center",
+    backgroundColor: "#FFEEE5",
+    height: 286,
+    justifyContent: "center",
+    width: "100%",
+  },
+  coverFallbackText: {
+    color: "#FF6535",
+    fontSize: 28,
+    fontWeight: "900",
   },
   topBadges: {
     flexDirection: "row",
@@ -315,6 +353,17 @@ const styles = StyleSheet.create({
   viewButtonText: {
     color: "#FFFFFF",
     fontSize: 15,
+    fontWeight: "900",
+  },
+  followButton: {
+    backgroundColor: "#FFF0EA",
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
+  followButtonText: {
+    color: "#FF6535",
+    fontSize: 14,
     fontWeight: "900",
   },
 });

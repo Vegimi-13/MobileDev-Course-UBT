@@ -1,141 +1,130 @@
-import { Trip } from "../models/trip";
+import type { CreateTripPayload, Trip } from "../models/trip";
+import { apiRequest } from "./apiClient";
 
-const sampleTrips: Trip[] = [
-  {
-    id: "1",
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=60",
-    host: "Maya Patel",
-    title: "Santorini & Mykonos",
-    location: "Greece",
-    date: "May 10 - May 20, 2025",
-    tags: ["beach", "luxury", "romance"],
-    likes: 641,
-    joined: "5/8 joined",
-    spotsLeft: 3,
-    status: "Completed",
-    visibility: "Public",
-    joinPolicy: "Open",
-    country: "Greece",
-    continent: "Europe",
-    category: "Beach",
-    membersJoined: 5,
-    maxMembers: 8,
-    summary: "Sunset dinners, small port towns, and a boat day stitched into one easy route.",
-  },
-  {
-    id: "2",
-    image:
-      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=60",
-    host: "Alex Chen",
-    title: "Bali Escape",
-    location: "Bali, Indonesia",
-    date: "Jul 15 - Jul 28, 2025",
-    tags: ["beach", "nature"],
-    likes: 247,
-    joined: "4/12 joined",
-    spotsLeft: 8,
-    status: "Upcoming",
-    visibility: "Public",
-    joinPolicy: "Open",
-    country: "Indonesia",
-    continent: "Asia",
-    category: "Beach",
-    membersJoined: 4,
-    maxMembers: 12,
-    summary: "Rice terraces, surf mornings, and a few very serious cafe stops.",
-  },
-  {
-    id: "3",
-    image:
-      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=60",
-    host: "Luca Bernardi",
-    title: "Swiss Alps Trek",
-    location: "Switzerland",
-    date: "Aug 02 - Aug 11, 2025",
-    tags: ["mountains", "hiking"],
-    likes: 183,
-    joined: "6/10 joined",
-    spotsLeft: 4,
-    status: "Ongoing",
-    visibility: "Public",
-    joinPolicy: "Open",
-    country: "Switzerland",
-    continent: "Europe",
-    category: "Mountains",
-    membersJoined: 3,
-    maxMembers: 8,
-    summary: "A scenic loop built around train links, alpine lakes, and long walking days.",
-  },
-  {
-    id: "4",
-    image:
-      "https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=1200&q=60",
-    host: "Naoko Sato",
-    title: "Tokyo Sakura Season",
-    location: "Japan",
-    date: "Mar 22 - Mar 30, 2025",
-    tags: ["city", "culture"],
-    likes: 512,
-    joined: "8/8 joined",
-    spotsLeft: 0,
-    status: "Completed",
-    visibility: "Private",
-    joinPolicy: "Approval",
-    country: "Japan",
-    continent: "Asia",
-    category: "City",
-    membersJoined: 5,
-    maxMembers: 6,
-    summary: "Cherry blossoms, late train rides, and a carefully mapped food crawl.",
-  },
-  {
-    id: "5",
-    image:
-      "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=1200&q=60",
-    host: "Amina Odede",
-    title: "Kenya Safari",
-    location: "Kenya",
-    date: "Sep 05 - Sep 14, 2025",
-    tags: ["wildlife", "adventure"],
-    likes: 312,
-    joined: "3/6 joined",
-    spotsLeft: 3,
-    status: "Upcoming",
-    visibility: "Private",
-    joinPolicy: "Approval",
-    country: "Kenya",
-    continent: "Africa",
-    category: "Adventure",
-    membersJoined: 3,
-    maxMembers: 6,
-    summary: "Game drives, lodge nights, and a route tuned for sunrise sightings.",
-  },
-  {
-    id: "6",
-    image:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=60",
-    host: "Jordan Miles",
-    title: "Route 66 Road Trip",
-    location: "United States",
-    date: "Oct 04 - Oct 15, 2025",
-    tags: ["roadtrip", "city", "adventure"],
-    likes: 94,
-    joined: "2/4 joined",
-    spotsLeft: 2,
-    status: "Upcoming",
-    visibility: "Public",
-    joinPolicy: "Open",
-    country: "United States",
-    continent: "North America",
-    category: "Adventure",
-    membersJoined: 2,
-    maxMembers: 4,
-    summary: "Desert stops, neon motels, playlists, and long open-road days.",
-  },
-];
+type ApiTrip = {
+  id: string;
+  publicId?: string;
+  title: string;
+  description?: string | null;
+  destination: string;
+  coverImageUrl?: string | null;
+  startDate: string;
+  endDate: string;
+  visibility: "PUBLIC" | "PRIVATE";
+  joinPolicy: "OPEN" | "APPROVAL";
+  maxMembers?: number | null;
+  creator?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    username?: string | null;
+  };
+  category?: {
+    name: string;
+  } | null;
+  tags?: Array<{
+    tag?: {
+      name: string;
+    };
+  }>;
+  participants?: unknown[];
+  _count?: {
+    participants?: number;
+    likes?: number;
+  };
+};
+
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+
+const getTripStatus = (trip: ApiTrip): Trip["status"] => {
+  const now = new Date();
+  const start = new Date(trip.startDate);
+  const end = new Date(trip.endDate);
+
+  if (end < now) {
+    return "Completed";
+  }
+
+  if (start <= now && end >= now) {
+    return "Ongoing";
+  }
+
+  return "Upcoming";
+};
+
+const getCategory = (name?: string | null): Trip["category"] => {
+  if (!name) {
+    return "Adventure";
+  }
+
+  const normalized = name.toLowerCase();
+  if (normalized.includes("beach")) return "Beach";
+  if (normalized.includes("mountain") || normalized.includes("hiking")) return "Mountains";
+  if (normalized.includes("city") || normalized.includes("culture")) return "City";
+  return "Adventure";
+};
+
+export const mapTrip = (trip: ApiTrip): Trip => {
+  const membersJoined = trip._count?.participants ?? trip.participants?.length ?? 0;
+  const maxMembers = trip.maxMembers ?? undefined;
+  const categoryName = trip.category?.name;
+
+  return {
+    id: trip.id,
+    publicId: trip.publicId,
+    image: trip.coverImageUrl ?? "",
+    coverImageUrl: trip.coverImageUrl ?? undefined,
+    host: trip.creator
+      ? `${trip.creator.firstName} ${trip.creator.lastName}`.trim()
+      : "Trip host",
+    hostId: trip.creator?.id,
+    title: trip.title,
+    location: trip.destination,
+    date: `${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}`,
+    tags: trip.tags?.map((entry) => entry.tag?.name).filter(Boolean) as string[],
+    likes: trip._count?.likes ?? 0,
+    joined: `${membersJoined}/${maxMembers ?? "-" } joined`,
+    spotsLeft: maxMembers ? Math.max(maxMembers - membersJoined, 0) : undefined,
+    status: getTripStatus(trip),
+    visibility: trip.visibility === "PRIVATE" ? "Private" : "Public",
+    joinPolicy: trip.joinPolicy === "APPROVAL" ? "Approval" : "Open",
+    country: trip.destination,
+    summary: trip.description ?? "",
+    category: getCategory(categoryName),
+    membersJoined,
+    maxMembers,
+  };
+};
 
 export async function fetchTrips(): Promise<Trip[]> {
-  // Simulate a network request; replace with real API call later.
-  return new Promise((resolve) => setTimeout(() => resolve(sampleTrips), 500));
+  const trips = await apiRequest<ApiTrip[]>("/api/trips/public");
+  return trips.map(mapTrip);
+}
+
+export async function fetchMyTrips(): Promise<Trip[]> {
+  const trips = await apiRequest<ApiTrip[]>("/api/trips/me", {
+    authenticated: true,
+  });
+  return trips.map(mapTrip);
+}
+
+export async function createTrip(payload: CreateTripPayload): Promise<Trip> {
+  const trip = await apiRequest<ApiTrip>("/api/trips", {
+    authenticated: true,
+    body: payload,
+    method: "POST",
+  });
+  return mapTrip(trip);
+}
+
+export async function joinTrip(publicId: string) {
+  return apiRequest(`/api/trips/${publicId}/join`, {
+    authenticated: true,
+    method: "POST",
+  });
 }

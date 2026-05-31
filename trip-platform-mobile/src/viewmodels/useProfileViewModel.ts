@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "../models/user";
 import { fetchCurrentUser } from "../services/userService";
-import { fetchTrips } from "../services/tripService";
+import { fetchMyTrips } from "../services/tripService";
+import { fetchFollowers, fetchFollowing } from "../services/followService";
 import type { Trip } from "../models/trip";
 
 type ProfileTab = "trips" | "photos" | "reviews";
@@ -19,10 +20,20 @@ export function useProfileViewModel() {
     try {
       const [userData, tripsData] = await Promise.all([
         fetchCurrentUser(),
-        fetchTrips(),
+        fetchMyTrips(),
+      ]);
+      const [followers, following] = await Promise.all([
+        fetchFollowers(userData.id).catch(() => []),
+        fetchFollowing(userData.id).catch(() => []),
       ]);
       setUser(userData);
       setTrips(tripsData);
+      setUser({
+        ...userData,
+        followersCount: followers.length,
+        followingCount: following.length,
+        tripsCount: tripsData.length,
+      });
     } catch (err: any) {
       setError(err?.message ?? "Failed to load profile");
     } finally {

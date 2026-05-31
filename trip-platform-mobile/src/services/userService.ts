@@ -30,7 +30,7 @@ export async function fetchCurrentUser(): Promise<User> {
     bio:
       user.bio ??
       "Explorer. Coffee addict. Always planning the next trip and the one after that.",
-    followersCount: user.followersCount ?? 891,
-    followingCount: user.followingCount ?? 234,
+    followersCount: user.followersCount ?? 0,
+    followingCount: user.followingCount ?? 0,
   };
 }

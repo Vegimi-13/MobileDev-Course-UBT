@@ -25,9 +25,11 @@ export function ExploreScreen() {
     isLoading,
     query,
     refresh,
+    requestJoinTrip,
     setAccessFilter,
     setCategoryFilter,
     setQuery,
+    toggleFollowHost,
   } = useExploreViewModel();
 
   return (
@@ -40,7 +42,13 @@ export function ExploreScreen() {
         contentContainerStyle={styles.content}
         refreshing={isLoading}
         onRefresh={refresh}
-        renderItem={({ item }) => <ExploreTripCard trip={item} />}
+        renderItem={({ item }) => (
+          <ExploreTripCard
+            trip={item}
+            onFollowHost={toggleFollowHost}
+            onJoinTrip={requestJoinTrip}
+          />
+        )}
         ListHeaderComponent={
           <>
             <View style={styles.header}>

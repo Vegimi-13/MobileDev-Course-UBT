@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Trip } from "../models/trip";
-import { fetchTrips } from "../services/tripService";
+import { fetchTrips, joinTrip } from "../services/tripService";
+import { followUser, unfollowUser } from "../services/followService";
 
 type ExploreAccessFilter = "All Trips" | "Open" | "Public";
 type ExploreCategoryFilter = "All" | "Beach" | "Mountains" | "City" | "Adventure";
@@ -62,6 +63,40 @@ export function useExploreViewModel() {
     });
   }, [accessFilter, categoryFilter, query, trips]);
 
+  const toggleFollowHost = async (trip: Trip) => {
+    if (!trip.hostId) return;
+
+    setTrips((current) =>
+      current.map((item) =>
+        item.hostId === trip.hostId
+          ? { ...item, isFollowingHost: !trip.isFollowingHost }
+          : item,
+      ),
+    );
+
+    try {
+      if (trip.isFollowingHost) {
+        await unfollowUser(trip.hostId);
+      } else {
+        await followUser(trip.hostId);
+      }
+    } catch {
+      setTrips((current) =>
+        current.map((item) =>
+          item.hostId === trip.hostId
+            ? { ...item, isFollowingHost: trip.isFollowingHost }
+            : item,
+        ),
+      );
+    }
+  };
+
+  const requestJoinTrip = async (trip: Trip) => {
+    if (!trip.publicId) return;
+    await joinTrip(trip.publicId);
+    await load();
+  };
+
   return {
     accessFilter,
     accessFilters,
@@ -72,8 +107,10 @@ export function useExploreViewModel() {
     isLoading,
     query,
     refresh: load,
+    requestJoinTrip,
     setAccessFilter,
     setCategoryFilter,
     setQuery,
+    toggleFollowHost,
   } as const;
 }

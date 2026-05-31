@@ -6,6 +6,8 @@ import type { Trip } from "../models/trip";
 type ExploreTripCardProps = {
   trip: Trip;
   compact?: boolean;
+  onFollowHost?: (trip: Trip) => void;
+  onJoinTrip?: (trip: Trip) => void;
 };
 
 const CATEGORY_ICON = {
@@ -18,6 +20,8 @@ const CATEGORY_ICON = {
 export default function ExploreTripCard({
   trip,
   compact = false,
+  onFollowHost,
+  onJoinTrip,
 }: ExploreTripCardProps) {
   const VisibilityIcon = trip.visibility === "Private" ? Lock : Globe2;
   const joined = trip.membersJoined ?? Number(trip.joined?.split("/")[0]) ?? 0;
@@ -25,7 +29,13 @@ export default function ExploreTripCard({
 
   return (
     <Pressable style={[styles.card, compact && styles.compactCard]}>
-      <Image source={{ uri: trip.image }} style={styles.image} />
+      {trip.image ? (
+        <Image source={{ uri: trip.image }} style={styles.image} />
+      ) : (
+        <View style={styles.coverFallback}>
+          <Text style={styles.coverFallbackText}>{trip.category ?? "Trip"}</Text>
+        </View>
+      )}
       <View style={styles.overlay} />
 
       <View style={styles.topBadges}>
@@ -64,6 +74,28 @@ export default function ExploreTripCard({
             <Text style={styles.metaText}>{joined}/{maxMembers}</Text>
           </View>
         </View>
+        {!compact && (
+          <View style={styles.actionsRow}>
+            {trip.hostId && (
+              <Pressable
+                onPress={() => onFollowHost?.(trip)}
+                style={styles.smallAction}
+              >
+                <Text style={styles.smallActionText}>
+                  {trip.isFollowingHost ? "Following" : "Follow"}
+                </Text>
+              </Pressable>
+            )}
+            {trip.publicId && (
+              <Pressable
+                onPress={() => onJoinTrip?.(trip)}
+                style={styles.primaryAction}
+              >
+                <Text style={styles.primaryActionText}>Join</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
       </View>
     </Pressable>
   );
@@ -83,6 +115,18 @@ const styles = StyleSheet.create({
   image: {
     height: "100%",
     width: "100%",
+  },
+  coverFallback: {
+    alignItems: "center",
+    backgroundColor: "#FFEEE5",
+    height: "100%",
+    justifyContent: "center",
+    width: "100%",
+  },
+  coverFallbackText: {
+    color: "#FF6535",
+    fontSize: 18,
+    fontWeight: "900",
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -154,5 +198,32 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "800",
+  },
+  actionsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  smallAction: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  smallActionText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  primaryAction: {
+    backgroundColor: "#FF6535",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  primaryActionText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "900",
   },
 });

@@ -50,7 +50,13 @@ export default function ProfileTripRow({ trip }: ProfileTripRowProps) {
 
   return (
     <Pressable style={styles.card}>
-      <Image source={{ uri: trip.image }} style={styles.image} />
+      {trip.image ? (
+        <Image source={{ uri: trip.image }} style={styles.image} />
+      ) : (
+        <View style={styles.imageFallback}>
+          <Text style={styles.imageFallbackText}>{trip.category ?? "Trip"}</Text>
+        </View>
+      )}
       <View style={styles.content}>
         <View style={styles.topRow}>
           <View style={styles.titleWrap}>
@@ -120,6 +126,19 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     height: 84,
     width: 84,
+  },
+  imageFallback: {
+    alignItems: "center",
+    backgroundColor: "#FFF0EA",
+    borderRadius: 18,
+    height: 84,
+    justifyContent: "center",
+    width: 84,
+  },
+  imageFallbackText: {
+    color: "#FF6535",
+    fontSize: 12,
+    fontWeight: "900",
   },
   content: {
     flex: 1,

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Trip } from "../models/trip";
-import { fetchTrips } from "../services/tripService";
+import { fetchMyTrips, fetchTrips, joinTrip } from "../services/tripService";
 import { fetchCurrentUser } from "../services/userService";
 import type { User } from "../models/user";
+import { followUser, unfollowUser } from "../services/followService";
 
 type HomeStatusFilter = "All" | "Upcoming" | "Ongoing" | "Completed";
 
@@ -20,14 +21,22 @@ export function useHomeViewModel() {
     try {
       // fetch trips and user in parallel; user fetch can fail if not authenticated
       const tripsPromise = fetchTrips();
+      const myTripsPromise = fetchMyTrips().catch(() => []);
       const userPromise = fetchCurrentUser().catch(() => null);
 
-      const [tripsData, userData] = await Promise.all([
+      const [tripsData, myTripsData, userData] = await Promise.all([
         tripsPromise,
+        myTripsPromise,
         userPromise,
       ]);
 
-      setTrips(tripsData);
+      const myTripIds = new Set(myTripsData.map((trip) => trip.id));
+      const mergedTrips = [
+        ...myTripsData,
+        ...tripsData.filter((trip) => !myTripIds.has(trip.id)),
+      ];
+
+      setTrips(mergedTrips);
       setUser(userData as User | null);
     } catch (err: any) {
       setError(err?.message ?? "Failed to load trips");
@@ -136,6 +145,40 @@ export function useHomeViewModel() {
     },
   ];
 
+  const toggleFollowHost = async (trip: Trip) => {
+    if (!trip.hostId) return;
+
+    setTrips((current) =>
+      current.map((item) =>
+        item.hostId === trip.hostId
+          ? { ...item, isFollowingHost: !trip.isFollowingHost }
+          : item,
+      ),
+    );
+
+    try {
+      if (trip.isFollowingHost) {
+        await unfollowUser(trip.hostId);
+      } else {
+        await followUser(trip.hostId);
+      }
+    } catch {
+      setTrips((current) =>
+        current.map((item) =>
+          item.hostId === trip.hostId
+            ? { ...item, isFollowingHost: trip.isFollowingHost }
+            : item,
+        ),
+      );
+    }
+  };
+
+  const requestJoinTrip = async (trip: Trip) => {
+    if (!trip.publicId) return;
+    await joinTrip(trip.publicId);
+    await load();
+  };
+
   return {
     activeStatusFilter,
     discoverTrips,
@@ -147,9 +190,11 @@ export function useHomeViewModel() {
     profileHandle,
     featuredTrip,
     profileStats,
+    requestJoinTrip,
     setActiveStatusFilter,
     statusFilters,
     stats,
+    toggleFollowHost,
     collections,
     isLoading,
     error,

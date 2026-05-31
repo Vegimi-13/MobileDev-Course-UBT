@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AppNotification } from "../models/notification";
-import { fetchNotifications } from "../services/notificationService";
+import {
+  fetchNotifications,
+  markAllNotificationsRead,
+} from "../services/notificationService";
 
 export function useNotificationsViewModel() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -31,6 +34,7 @@ export function useNotificationsViewModel() {
     setNotifications((current) =>
       current.map((item) => ({ ...item, isRead: true })),
     );
+    markAllNotificationsRead().catch(load);
   };
 
   const summaryText = useMemo(() => {

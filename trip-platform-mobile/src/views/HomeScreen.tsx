@@ -28,8 +28,10 @@ export function HomeScreen({ apiUrl }: HomeScreenProps) {
     myTrips,
     profileStats,
     refresh,
+    requestJoinTrip,
     setActiveStatusFilter,
     statusFilters,
+    toggleFollowHost,
     user,
   } = useHomeViewModel();
 
@@ -41,7 +43,13 @@ export function HomeScreen({ apiUrl }: HomeScreenProps) {
         contentContainerStyle={styles.list}
         refreshing={isLoading}
         onRefresh={refresh}
-        renderItem={({ item }) => <HomeTripFeatureCard trip={item} />}
+        renderItem={({ item }) => (
+          <HomeTripFeatureCard
+            trip={item}
+            onFollowHost={toggleFollowHost}
+            onJoinTrip={requestJoinTrip}
+          />
+        )}
         ListHeaderComponent={
           <>
             <View style={styles.header}>
@@ -103,7 +111,13 @@ export function HomeScreen({ apiUrl }: HomeScreenProps) {
                 contentContainerStyle={styles.myTripsRow}
               >
                 {myTrips.map((trip) => (
-                  <ExploreTripCard key={trip.id} trip={trip} compact />
+                  <ExploreTripCard
+                    key={trip.id}
+                    trip={trip}
+                    compact
+                    onFollowHost={toggleFollowHost}
+                    onJoinTrip={requestJoinTrip}
+                  />
                 ))}
               </ScrollView>
             </View>
