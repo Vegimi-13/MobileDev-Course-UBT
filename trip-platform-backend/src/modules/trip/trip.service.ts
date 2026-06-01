@@ -261,6 +261,67 @@ export const inviteUserToTrip = async (
   return participant;
 };
 
+export const acceptTripInvite = async (userId: string, publicId: string) => {
+  const trip = await tripRepo.findTripForJoin(publicId);
+
+  if (!trip) {
+    throw new TripServiceError("Trip not found", 404);
+  }
+
+  const participant = await tripRepo.findTripParticipant(trip.id, userId);
+  const inviteNotification = await tripRepo.findTripInviteNotification(
+    trip.id,
+    userId,
+  );
+
+  if (!participant || participant.status !== "PENDING" || !inviteNotification) {
+    throw new TripServiceError("Invite not found", 404);
+  }
+
+  if (
+    trip.maxMembers !== null &&
+    trip._count.participants >= trip.maxMembers
+  ) {
+    throw new TripServiceError("Trip is full", 409);
+  }
+
+  const updatedParticipant = await tripRepo.updateTripParticipantStatus(
+    trip.id,
+    userId,
+    "ACCEPTED",
+  );
+
+  await notify({
+    type: "TRIP_JOIN",
+    receiverId: trip.createdBy,
+    senderId: userId,
+    tripId: trip.id,
+    message: `accepted your invite to ${trip.title}`,
+  });
+
+  return updatedParticipant;
+};
+
+export const declineTripInvite = async (userId: string, publicId: string) => {
+  const trip = await tripRepo.findTripForJoin(publicId);
+
+  if (!trip) {
+    throw new TripServiceError("Trip not found", 404);
+  }
+
+  const participant = await tripRepo.findTripParticipant(trip.id, userId);
+  const inviteNotification = await tripRepo.findTripInviteNotification(
+    trip.id,
+    userId,
+  );
+
+  if (!participant || participant.status !== "PENDING" || !inviteNotification) {
+    throw new TripServiceError("Invite not found", 404);
+  }
+
+  return tripRepo.updateTripParticipantStatus(trip.id, userId, "DECLINED");
+};
+
 export const getPendingJoinRequests = async (
   ownerId: string,
   publicId: string,

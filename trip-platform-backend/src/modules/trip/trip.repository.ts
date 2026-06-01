@@ -17,9 +17,19 @@ export const findTripByPublicId = (publicId: string, viewerId?: string) => {
           tag: true,
         },
       },
-      participants: {
-        include: { user: true },
-      },
+      participants: viewerId
+        ? {
+            where: {
+              userId: viewerId,
+            },
+            select: {
+              userId: true,
+              status: true,
+            },
+          }
+        : {
+            include: { user: true },
+          },
       ...(viewerId
         ? {
             likes: {
@@ -35,7 +45,11 @@ export const findTripByPublicId = (publicId: string, viewerId?: string) => {
       photos: true,
       _count: {
         select: {
-          participants: true,
+          participants: {
+            where: {
+              status: "ACCEPTED",
+            },
+          },
           likes: true,
         },
       },
@@ -98,6 +112,16 @@ export const findTripParticipant = (tripId: string, userId: string) => {
         userId,
         tripId,
       },
+    },
+  });
+};
+
+export const findTripInviteNotification = (tripId: string, userId: string) => {
+  return prisma.notification.findFirst({
+    where: {
+      tripId,
+      receiverId: userId,
+      type: "TRIP_INVITE",
     },
   });
 };
@@ -268,12 +292,25 @@ export const findPublicTrips = (
       },
       _count: {
         select: {
-          participants: true,
+          participants: {
+            where: {
+              status: "ACCEPTED",
+            },
+          },
           likes: true,
         },
       },
       ...(viewerId
         ? {
+            participants: {
+              where: {
+                userId: viewerId,
+              },
+              select: {
+                userId: true,
+                status: true,
+              },
+            },
             likes: {
               where: {
                 userId: viewerId,
@@ -330,7 +367,11 @@ export const findTripsByUser = (userId: string) => {
       },
       _count: {
         select: {
-          participants: true,
+          participants: {
+            where: {
+              status: "ACCEPTED",
+            },
+          },
           likes: true,
         },
       },

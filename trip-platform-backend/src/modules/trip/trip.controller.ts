@@ -274,3 +274,49 @@ export const inviteUserToTrip = async (
     res.status(400).json({ message: err.message });
   }
 };
+
+export const acceptTripInvite = async (
+  req: Request<{ publicId: string }>,
+  res: Response,
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const participant = await service.acceptTripInvite(
+      req.user.id,
+      req.params.publicId,
+    );
+    res.json(participant);
+  } catch (err: any) {
+    if (err instanceof TripServiceError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const declineTripInvite = async (
+  req: Request<{ publicId: string }>,
+  res: Response,
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const participant = await service.declineTripInvite(
+      req.user.id,
+      req.params.publicId,
+    );
+    res.json(participant);
+  } catch (err: any) {
+    if (err instanceof TripServiceError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+
+    res.status(500).json({ message: err.message });
+  }
+};

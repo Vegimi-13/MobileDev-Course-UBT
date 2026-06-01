@@ -28,6 +28,6 @@ export const sendExpoPushNotifications = async (messages: PushMessage[]) => {
       body: JSON.stringify(messages),
     });
   } catch {
-    // Push should not break core flows like follow/like/join.
+    // Push should not break core flows like invite/like/join.
   }
 };

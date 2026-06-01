@@ -13,6 +13,8 @@ router.get("/:publicId/requests", authenticate, controller.getPendingJoinRequest
 router.get("/:publicId/posts", authenticate, controller.getTripPosts);
 router.post("/:publicId/posts", authenticate, controller.createTripPost);
 router.post("/:publicId/invites", authenticate, controller.inviteUserToTrip);
+router.patch("/:publicId/invites/accept", authenticate, controller.acceptTripInvite);
+router.patch("/:publicId/invites/decline", authenticate, controller.declineTripInvite);
 router.patch(
   "/:publicId/participants/:userId/approve",
   authenticate,
