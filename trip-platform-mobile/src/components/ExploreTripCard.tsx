@@ -6,7 +6,6 @@ import type { Trip } from "../models/trip";
 type ExploreTripCardProps = {
   trip: Trip;
   compact?: boolean;
-  onFollowHost?: (trip: Trip) => void;
   onJoinTrip?: (trip: Trip) => void;
   onToggleLike?: (trip: Trip) => void;
   onOpenTrip?: (trip: Trip) => void;
@@ -22,7 +21,6 @@ const CATEGORY_ICON = {
 export default function ExploreTripCard({
   trip,
   compact = false,
-  onFollowHost,
   onJoinTrip,
   onToggleLike,
   onOpenTrip,
@@ -30,6 +28,11 @@ export default function ExploreTripCard({
   const VisibilityIcon = trip.visibility === "Private" ? Lock : Globe2;
   const joined = trip.membersJoined ?? Number(trip.joined?.split("/")[0]) ?? 0;
   const maxMembers = trip.maxMembers ?? Number(trip.joined?.split("/")[1]?.split(" ")[0]) ?? 0;
+  const joinLabel = trip.hasJoined
+    ? "Joined"
+    : trip.hasRequested
+      ? "Requested"
+      : "Join";
 
   return (
     <Pressable
@@ -92,22 +95,16 @@ export default function ExploreTripCard({
         </View>
         {!compact && (
           <View style={styles.actionsRow}>
-            {trip.hostId && (
-              <Pressable
-                onPress={() => onFollowHost?.(trip)}
-                style={styles.smallAction}
-              >
-                <Text style={styles.smallActionText}>
-                  {trip.isFollowingHost ? "Following" : "Follow"}
-                </Text>
-              </Pressable>
-            )}
-            {trip.publicId && !trip.isOwner && !trip.hasJoined && (
+            {trip.publicId && !trip.isOwner && (
               <Pressable
                 onPress={() => onJoinTrip?.(trip)}
-                style={styles.primaryAction}
+                style={[
+                  styles.primaryAction,
+                  (trip.hasJoined || trip.hasRequested) && styles.disabledAction,
+                ]}
+                disabled={trip.hasJoined || trip.hasRequested}
               >
-                <Text style={styles.primaryActionText}>Join</Text>
+                <Text style={styles.primaryActionText}>{joinLabel}</Text>
               </Pressable>
             )}
           </View>
@@ -220,22 +217,14 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 12,
   },
-  smallAction: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  smallActionText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "900",
-  },
   primaryAction: {
     backgroundColor: "#FF6535",
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
+  },
+  disabledAction: {
+    backgroundColor: "rgba(255,255,255,0.28)",
   },
   primaryActionText: {
     color: "#FFFFFF",

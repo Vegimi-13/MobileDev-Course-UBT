@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Trip } from "../models/trip";
 import { fetchTrips, joinTrip, likeTrip, unlikeTrip } from "../services/tripService";
-import { followUser, unfollowUser } from "../services/followService";
 import { fetchCurrentUser } from "../services/userService";
 
 type ExploreAccessFilter = "All Trips" | "Open" | "Public";
@@ -76,36 +75,35 @@ export function useExploreViewModel() {
     });
   }, [accessFilter, categoryFilter, query, trips]);
 
-  const toggleFollowHost = async (trip: Trip) => {
-    if (!trip.hostId) return;
+  const requestJoinTrip = async (trip: Trip) => {
+    if (!trip.publicId) return;
+    const nextStatus = trip.joinPolicy === "Approval" ? "PENDING" : "ACCEPTED";
 
     setTrips((current) =>
       current.map((item) =>
-        item.hostId === trip.hostId
-          ? { ...item, isFollowingHost: !trip.isFollowingHost }
+        item.id === trip.id
+          ? {
+              ...item,
+              membershipStatus: nextStatus,
+              hasJoined: nextStatus === "ACCEPTED",
+              hasRequested: nextStatus === "PENDING",
+              membersJoined:
+                nextStatus === "ACCEPTED"
+                  ? (item.membersJoined ?? 0) + 1
+                  : item.membersJoined,
+              joined:
+                nextStatus === "ACCEPTED"
+                  ? `${(item.membersJoined ?? 0) + 1}/${item.maxMembers ?? "-"} joined`
+                  : item.joined,
+              spotsLeft:
+                nextStatus === "ACCEPTED" && typeof item.spotsLeft === "number"
+                  ? Math.max(item.spotsLeft - 1, 0)
+                  : item.spotsLeft,
+            }
           : item,
       ),
     );
 
-    try {
-      if (trip.isFollowingHost) {
-        await unfollowUser(trip.hostId);
-      } else {
-        await followUser(trip.hostId);
-      }
-    } catch {
-      setTrips((current) =>
-        current.map((item) =>
-          item.hostId === trip.hostId
-            ? { ...item, isFollowingHost: trip.isFollowingHost }
-            : item,
-        ),
-      );
-    }
-  };
-
-  const requestJoinTrip = async (trip: Trip) => {
-    if (!trip.publicId) return;
     await joinTrip(trip.publicId);
     await load();
   };
@@ -163,7 +161,6 @@ export function useExploreViewModel() {
     setAccessFilter,
     setCategoryFilter,
     setQuery,
-    toggleFollowHost,
     toggleTripLike,
   } as const;
 }

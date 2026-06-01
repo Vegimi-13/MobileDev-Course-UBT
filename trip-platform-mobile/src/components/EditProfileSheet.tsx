@@ -76,12 +76,6 @@ export default function EditProfileSheet({
             value={form.bio}
             onChangeText={(value) => onChange("bio", value)}
           />
-          <ProfileInput
-            autoCapitalize="none"
-            label="Avatar URL"
-            value={form.avatarUrl}
-            onChangeText={(value) => onChange("avatarUrl", value)}
-          />
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 

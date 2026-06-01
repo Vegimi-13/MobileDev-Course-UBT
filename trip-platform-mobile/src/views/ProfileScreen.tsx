@@ -10,16 +10,14 @@ import {
   View,
 } from "react-native";
 import {
-  Camera,
   Globe2,
   Pencil,
   Plane,
-  Settings,
-  Star,
 } from "lucide-react-native";
 import EditProfileSheet from "../components/EditProfileSheet";
 import ProfileTripRow from "../components/ProfileTripRow";
 import { useProfileViewModel } from "../viewmodels/useProfileViewModel";
+import { getInitials } from "../utils/initials";
 
 type ProfileScreenProps = {
   onLogout: () => void;
@@ -52,7 +50,6 @@ export function ProfileScreen({ onLogout, onOpenTrip }: ProfileScreenProps) {
 
   const badgeIcons = {
     softOrange: <Globe2 color="#F26A2E" size={14} strokeWidth={2.1} />,
-    softGold: <Star color="#F4AA13" size={14} strokeWidth={2.1} />,
     softMint: <Plane color="#10B981" size={14} strokeWidth={2.1} />,
   } as const;
 
@@ -65,24 +62,15 @@ export function ProfileScreen({ onLogout, onOpenTrip }: ProfileScreenProps) {
 
           <View style={styles.headerTitleRow}>
             <Text style={styles.profileLabel}>Profile</Text>
-            <Pressable style={styles.settingsButton}>
-              <Settings color="#FFFFFF" size={18} strokeWidth={2.1} />
-            </Pressable>
           </View>
 
           <View style={styles.headerLower}>
             <View style={styles.avatarShell}>
-              <Image
-                source={{
-                  uri:
-                    user?.avatarUrl ??
-                    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
-                }}
-                style={styles.avatar}
-              />
-              <Pressable style={styles.cameraBadge}>
-                <Camera color="#FFFFFF" size={14} strokeWidth={2.3} />
-              </Pressable>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {getInitials(user?.firstName, user?.lastName, user?.username)}
+                </Text>
+              </View>
             </View>
 
             <Pressable style={styles.editButton} onPress={startEditing}>
@@ -107,7 +95,6 @@ export function ProfileScreen({ onLogout, onOpenTrip }: ProfileScreenProps) {
                 style={[
                   styles.badge,
                   badge.tone === "softOrange" && styles.badgeOrange,
-                  badge.tone === "softGold" && styles.badgeGold,
                   badge.tone === "softMint" && styles.badgeMint,
                 ]}
               >
@@ -116,7 +103,6 @@ export function ProfileScreen({ onLogout, onOpenTrip }: ProfileScreenProps) {
                   style={[
                     styles.badgeText,
                     badge.tone === "softOrange" && styles.badgeTextOrange,
-                    badge.tone === "softGold" && styles.badgeTextGold,
                     badge.tone === "softMint" && styles.badgeTextMint,
                   ]}
                 >
@@ -183,7 +169,7 @@ export function ProfileScreen({ onLogout, onOpenTrip }: ProfileScreenProps) {
             </View>
           )}
 
-          {activeTab === "photos" && (
+          {activeTab === "gallery" && (
             <View style={styles.photoGrid}>
               {allTrips.filter((trip) => trip.image).length > 0 ? (
                 allTrips.filter((trip) => trip.image).slice(0, 9).map((trip) => (
@@ -193,32 +179,6 @@ export function ProfileScreen({ onLogout, onOpenTrip }: ProfileScreenProps) {
                     style={styles.photoTile}
                   />
                 ))
-              ) : (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>{emptyStateText}</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {activeTab === "reviews" && (
-            <View style={styles.reviewList}>
-              {allTrips.length > 0 ? (
-                [...allTrips]
-                  .sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
-                  .slice(0, 2)
-                  .map((trip) => (
-                    <View key={trip.id} style={styles.reviewCard}>
-                      <View style={styles.reviewHeader}>
-                        <Text style={styles.reviewTitle}>{trip.title}</Text>
-                        <Text style={styles.reviewStars}>*****</Text>
-                      </View>
-                      <Text style={styles.reviewMeta}>{trip.date}</Text>
-                      <Text style={styles.reviewBody}>
-                        A well-loved trip with {trip.likes ?? 0} likes from the crew.
-                      </Text>
-                    </View>
-                  ))
               ) : (
                 <View style={styles.emptyCard}>
                   <Text style={styles.emptyText}>{emptyStateText}</Text>
@@ -292,15 +252,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginTop: 24,
   },
-  settingsButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 22,
-    height: 44,
-    justifyContent: "center",
-    marginTop: 24,
-    width: 44,
-  },
   headerLower: {
     alignItems: "flex-end",
     flexDirection: "row",
@@ -312,24 +263,19 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   avatar: {
+    alignItems: "center",
+    backgroundColor: "#17172B",
     borderColor: "#FFFFFF",
     borderRadius: 26,
     borderWidth: 4,
     height: 126,
+    justifyContent: "center",
     width: 126,
   },
-  cameraBadge: {
-    alignItems: "center",
-    backgroundColor: "#FF6A3D",
-    borderColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 3,
-    bottom: 6,
-    height: 36,
-    justifyContent: "center",
-    position: "absolute",
-    right: 0,
-    width: 36,
+  avatarText: {
+    color: "#FFFFFF",
+    fontSize: 34,
+    fontWeight: "900",
   },
   editButton: {
     alignItems: "center",
@@ -387,9 +333,6 @@ const styles = StyleSheet.create({
   badgeOrange: {
     backgroundColor: "#FFF1E8",
   },
-  badgeGold: {
-    backgroundColor: "#FFF6D9",
-  },
   badgeMint: {
     backgroundColor: "#E7FBF2",
   },
@@ -399,9 +342,6 @@ const styles = StyleSheet.create({
   },
   badgeTextOrange: {
     color: "#F26A2E",
-  },
-  badgeTextGold: {
-    color: "#DFA10E",
   },
   badgeTextMint: {
     color: "#12B981",
@@ -476,46 +416,6 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 16,
     width: "31.8%",
-  },
-  reviewList: {
-    gap: 12,
-    marginTop: 20,
-  },
-  reviewCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#ECE3DA",
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 18,
-  },
-  reviewHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-    justifyContent: "space-between",
-  },
-  reviewTitle: {
-    color: "#26233B",
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  reviewStars: {
-    color: "#F4AA13",
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  reviewMeta: {
-    color: "#98A0B3",
-    fontSize: 13,
-    fontWeight: "700",
-    marginTop: 6,
-  },
-  reviewBody: {
-    color: "#667085",
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 12,
   },
   emptyCard: {
     alignItems: "center",

@@ -9,7 +9,6 @@ import {
 } from "../services/tripService";
 import { fetchCurrentUser } from "../services/userService";
 import type { User } from "../models/user";
-import { followUser, unfollowUser } from "../services/followService";
 
 type HomeStatusFilter = "All" | "Upcoming" | "Ongoing" | "Completed";
 
@@ -110,7 +109,7 @@ export function useHomeViewModel() {
       },
       {
         title: "Public adventures",
-        subtitle: `${publicTrips.length} trips open for the crew to follow along.`,
+        subtitle: `${publicTrips.length} trips open for people to join.`,
         accent: "#12B981",
       },
       {
@@ -145,47 +144,46 @@ export function useHomeViewModel() {
       tone: "orange" as const,
     },
     {
-      label: "Following",
-      value: user?.followingCount ?? 234,
+      label: "Joined",
+      value: sortedTrips.filter((trip) => trip.hasJoined && !trip.isOwner).length,
       tone: "mint" as const,
     },
     {
-      label: "Followers",
-      value: user?.followersCount ?? 891,
+      label: "Public",
+      value: publicTrips.length,
       tone: "blue" as const,
     },
   ];
 
-  const toggleFollowHost = async (trip: Trip) => {
-    if (!trip.hostId) return;
+  const requestJoinTrip = async (trip: Trip) => {
+    if (!trip.publicId) return;
+    const nextStatus = trip.joinPolicy === "Approval" ? "PENDING" : "ACCEPTED";
 
     setTrips((current) =>
       current.map((item) =>
-        item.hostId === trip.hostId
-          ? { ...item, isFollowingHost: !trip.isFollowingHost }
+        item.id === trip.id
+          ? {
+              ...item,
+              membershipStatus: nextStatus,
+              hasJoined: nextStatus === "ACCEPTED",
+              hasRequested: nextStatus === "PENDING",
+              membersJoined:
+                nextStatus === "ACCEPTED"
+                  ? (item.membersJoined ?? 0) + 1
+                  : item.membersJoined,
+              joined:
+                nextStatus === "ACCEPTED"
+                  ? `${(item.membersJoined ?? 0) + 1}/${item.maxMembers ?? "-"} joined`
+                  : item.joined,
+              spotsLeft:
+                nextStatus === "ACCEPTED" && typeof item.spotsLeft === "number"
+                  ? Math.max(item.spotsLeft - 1, 0)
+                  : item.spotsLeft,
+            }
           : item,
       ),
     );
 
-    try {
-      if (trip.isFollowingHost) {
-        await unfollowUser(trip.hostId);
-      } else {
-        await followUser(trip.hostId);
-      }
-    } catch {
-      setTrips((current) =>
-        current.map((item) =>
-          item.hostId === trip.hostId
-            ? { ...item, isFollowingHost: trip.isFollowingHost }
-            : item,
-        ),
-      );
-    }
-  };
-
-  const requestJoinTrip = async (trip: Trip) => {
-    if (!trip.publicId) return;
     await joinTrip(trip.publicId);
     await load();
   };
@@ -244,7 +242,6 @@ export function useHomeViewModel() {
     setActiveStatusFilter,
     statusFilters,
     stats,
-    toggleFollowHost,
     toggleTripLike,
     collections,
     isLoading,

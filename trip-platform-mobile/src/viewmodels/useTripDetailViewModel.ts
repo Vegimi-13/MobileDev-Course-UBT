@@ -94,6 +94,25 @@ export function useTripDetailViewModel(publicId: string) {
 
   const requestJoin = async () => {
     if (!trip?.publicId) return;
+    const nextStatus = trip.joinPolicy === "Approval" ? "PENDING" : "ACCEPTED";
+    setTrip({
+      ...trip,
+      membershipStatus: nextStatus,
+      hasJoined: nextStatus === "ACCEPTED",
+      hasRequested: nextStatus === "PENDING",
+      membersJoined:
+        nextStatus === "ACCEPTED"
+          ? (trip.membersJoined ?? 0) + 1
+          : trip.membersJoined,
+      joined:
+        nextStatus === "ACCEPTED"
+          ? `${(trip.membersJoined ?? 0) + 1}/${trip.maxMembers ?? "-"} joined`
+          : trip.joined,
+      spotsLeft:
+        nextStatus === "ACCEPTED" && typeof trip.spotsLeft === "number"
+          ? Math.max(trip.spotsLeft - 1, 0)
+          : trip.spotsLeft,
+    });
     await joinTrip(trip.publicId);
     await load();
   };
@@ -103,7 +122,6 @@ export function useTripDetailViewModel(publicId: string) {
 
     const created = await createTripPost(trip.publicId, {
       body: postBody.trim(),
-      imageUrl: trip.image || undefined,
     });
     setPosts((current) => [created, ...current]);
     setPostBody("");

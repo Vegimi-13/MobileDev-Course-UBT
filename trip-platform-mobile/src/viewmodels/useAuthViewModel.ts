@@ -22,7 +22,7 @@ export function useAuthViewModel() {
 
     return {
       title: "Create account",
-      subtitle: "Start saving trips, photos, and travel ideas in one place.",
+      subtitle: "Create trips, join plans, and invite people into the journey.",
       buttonTitle: "Register",
     };
   }, [mode]);

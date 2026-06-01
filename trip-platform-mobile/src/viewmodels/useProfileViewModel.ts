@@ -6,12 +6,11 @@ import {
   type UpdateCurrentUserPayload,
 } from "../services/userService";
 import { fetchMyTrips } from "../services/tripService";
-import { fetchFollowers, fetchFollowing } from "../services/followService";
 import type { Trip } from "../models/trip";
 
-type ProfileTab = "trips" | "photos" | "reviews";
+type ProfileTab = "trips" | "gallery";
 export type ProfileForm = Required<
-  Pick<User, "firstName" | "lastName" | "username" | "bio" | "avatarUrl">
+  Pick<User, "firstName" | "lastName" | "username" | "bio">
 >;
 
 const toProfileForm = (user: User): ProfileForm => ({
@@ -19,7 +18,6 @@ const toProfileForm = (user: User): ProfileForm => ({
   lastName: user.lastName ?? "",
   username: user.username ?? "",
   bio: user.bio ?? "",
-  avatarUrl: user.avatarUrl ?? "",
 });
 
 export function useProfileViewModel() {
@@ -36,7 +34,6 @@ export function useProfileViewModel() {
     lastName: "",
     username: "",
     bio: "",
-    avatarUrl: "",
   });
 
   const load = useCallback(async () => {
@@ -47,16 +44,10 @@ export function useProfileViewModel() {
         fetchCurrentUser(),
         fetchMyTrips(),
       ]);
-      const [followers, following] = await Promise.all([
-        fetchFollowers(userData.id).catch(() => []),
-        fetchFollowing(userData.id).catch(() => []),
-      ]);
       setProfileForm(toProfileForm(userData));
       setTrips(tripsData);
       setUser({
         ...userData,
-        followersCount: followers.length,
-        followingCount: following.length,
         tripsCount: tripsData.length,
       });
     } catch (err: any) {
@@ -84,13 +75,7 @@ export function useProfileViewModel() {
         tone: "softOrange" as const,
       },
       {
-        label: "Top Reviewer",
-        tone: "softGold" as const,
-      },
-      {
-        label: trips.some((trip) => trip.visibility === "Public")
-          ? "Adventurer"
-          : "Private Planner",
+        label: `${trips.filter((trip) => trip.hasJoined && !trip.isOwner).length} Joined`,
         tone: "softMint" as const,
       },
     ],
@@ -104,36 +89,28 @@ export function useProfileViewModel() {
         value: user?.tripsCount ?? trips.length,
       },
       {
-        label: "Followers",
-        value: user?.followersCount ?? 891,
+        label: "Joined",
+        value: trips.filter((trip) => trip.hasJoined && !trip.isOwner).length,
       },
       {
-        label: "Following",
-        value: user?.followingCount ?? 234,
+        label: "Public",
+        value: trips.filter((trip) => trip.visibility === "Public").length,
       },
     ],
-    [trips.length, user?.followersCount, user?.followingCount, user?.tripsCount],
+    [trips, user?.tripsCount],
   );
 
   const tabItems = [
     { key: "trips" as const, label: "Trips" },
-    { key: "photos" as const, label: "Photos" },
-    { key: "reviews" as const, label: "Reviews" },
+    { key: "gallery" as const, label: "Gallery" },
   ];
 
-  const visibleTrips =
-    activeTab === "trips"
-      ? trips
-      : activeTab === "photos"
-        ? trips.slice(0, 3)
-        : [...trips].sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0)).slice(0, 2);
+  const visibleTrips = activeTab === "trips" ? trips : trips.slice(0, 3);
 
   const emptyStateText =
-    activeTab === "photos"
-      ? "Photo memories will show up here next."
-      : activeTab === "reviews"
-        ? "Reviews are coming soon."
-        : "No trips yet.";
+    activeTab === "gallery"
+      ? "Trip cover photos will show up here."
+      : "No trips yet.";
 
   const startEditing = () => {
     if (user) {
@@ -167,13 +144,10 @@ export function useProfileViewModel() {
         lastName: profileForm.lastName.trim(),
         username: profileForm.username.trim() || undefined,
         bio: profileForm.bio.trim() || undefined,
-        avatarUrl: profileForm.avatarUrl.trim() || undefined,
       };
       const updated = await updateCurrentUser(payload);
       const nextUser = {
         ...updated,
-        followersCount: user?.followersCount ?? updated.followersCount,
-        followingCount: user?.followingCount ?? updated.followingCount,
         tripsCount: user?.tripsCount ?? trips.length,
       };
       setUser(nextUser);

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AppNotification } from "../models/notification";
 import {
+  markNotificationRead,
   fetchNotifications,
   markAllNotificationsRead,
 } from "../services/notificationService";
+import { acceptTripInvite, declineTripInvite } from "../services/tripService";
 
 export function useNotificationsViewModel() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -37,6 +39,44 @@ export function useNotificationsViewModel() {
     markAllNotificationsRead().catch(load);
   };
 
+  const acceptInvite = async (notification: AppNotification) => {
+    if (!notification.tripPublicId) return;
+
+    setNotifications((current) =>
+      current.map((item) =>
+        item.id === notification.id
+          ? { ...item, actionable: false, isRead: true, message: "invite accepted for" }
+          : item,
+      ),
+    );
+
+    try {
+      await acceptTripInvite(notification.tripPublicId);
+      await markNotificationRead(notification.id);
+    } catch {
+      await load();
+    }
+  };
+
+  const declineInvite = async (notification: AppNotification) => {
+    if (!notification.tripPublicId) return;
+
+    setNotifications((current) =>
+      current.map((item) =>
+        item.id === notification.id
+          ? { ...item, actionable: false, isRead: true, message: "invite declined for" }
+          : item,
+      ),
+    );
+
+    try {
+      await declineTripInvite(notification.tripPublicId);
+      await markNotificationRead(notification.id);
+    } catch {
+      await load();
+    }
+  };
+
   const summaryText = useMemo(() => {
     if (unreadCount === 0) {
       return "All caught up";
@@ -47,6 +87,8 @@ export function useNotificationsViewModel() {
 
   return {
     earlierNotifications,
+    acceptInvite,
+    declineInvite,
     error,
     isLoading,
     markAllRead,
