@@ -5,15 +5,13 @@ import {
   Globe2,
   Heart,
   MapPin,
-  MessageCircle,
-  Share2,
   Users,
 } from "lucide-react-native";
 import type { Trip } from "../models/trip";
+import { getInitialsFromName } from "../utils/initials";
 
 type HomeTripFeatureCardProps = {
   trip: Trip;
-  onFollowHost?: (trip: Trip) => void;
   onJoinTrip?: (trip: Trip) => void;
   onToggleLike?: (trip: Trip) => void;
   onOpenTrip?: (trip: Trip) => void;
@@ -21,12 +19,16 @@ type HomeTripFeatureCardProps = {
 
 export default function HomeTripFeatureCard({
   trip,
-  onFollowHost,
   onJoinTrip,
   onToggleLike,
   onOpenTrip,
 }: HomeTripFeatureCardProps) {
-  const canJoin = Boolean(trip.publicId && !trip.isOwner && !trip.hasJoined);
+  const showJoinState = Boolean(trip.publicId && !trip.isOwner);
+  const joinLabel = trip.hasJoined
+    ? "Joined"
+    : trip.hasRequested
+      ? "Requested"
+      : "Join";
 
   return (
     <Pressable style={styles.card} onPress={() => onOpenTrip?.(trip)}>
@@ -52,12 +54,7 @@ export default function HomeTripFeatureCard({
 
       <View style={styles.content}>
         <View style={styles.hostAvatar}>
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1534751516642-a1af1ef26a56?auto=format&fit=crop&w=160&q=80",
-            }}
-            style={styles.hostImage}
-          />
+          <Text style={styles.hostInitials}>{getInitialsFromName(trip.host)}</Text>
         </View>
         <View style={styles.categoryBadge}>
           <Text style={styles.categoryBadgeText}>{trip.category ?? "Adventure"}</Text>
@@ -85,11 +82,7 @@ export default function HomeTripFeatureCard({
         </View>
 
         <View style={styles.joinRow}>
-          <View style={styles.avatarStack}>
-            {[0, 1, 2, 3].map((item) => (
-              <View key={item} style={[styles.stackAvatar, { marginLeft: item ? -8 : 0 }]} />
-            ))}
-          </View>
+          <Users color="#98A2B3" size={17} strokeWidth={2.2} />
           <Text style={styles.joinedText}>{trip.joined}</Text>
           <View style={styles.spotsWrap}>
             <Users color="#00C989" size={14} strokeWidth={2.2} />
@@ -112,28 +105,18 @@ export default function HomeTripFeatureCard({
               />
             </Pressable>
             <Text style={styles.actionText}>{trip.likes ?? 0}</Text>
-            <MessageCircle color="#98A2B3" size={23} strokeWidth={2} />
-            <Text style={styles.actionText}>2</Text>
-            <Share2 color="#98A2B3" size={23} strokeWidth={2} />
           </View>
           <View style={styles.footerRight}>
-            {trip.hostId && (
+            {showJoinState ? (
               <Pressable
-                style={styles.followButton}
-                onPress={() => onFollowHost?.(trip)}
-              >
-                <Text style={styles.followButtonText}>
-                  {trip.isFollowingHost ? "Following" : "Follow"}
-                </Text>
-              </Pressable>
-            )}
-            {canJoin ? (
-              <Pressable
-                style={styles.viewButton}
+                style={[
+                  styles.viewButton,
+                  (trip.hasJoined || trip.hasRequested) && styles.viewButtonDisabled,
+                ]}
                 onPress={() => onJoinTrip?.(trip)}
-                disabled={!trip.publicId}
+                disabled={!trip.publicId || trip.hasJoined || trip.hasRequested}
               >
-                <Text style={styles.viewButtonText}>Join</Text>
+                <Text style={styles.viewButtonText}>{joinLabel}</Text>
                 <ChevronRight color="#FFFFFF" size={16} strokeWidth={2.4} />
               </Pressable>
             ) : null}
@@ -223,6 +206,7 @@ const styles = StyleSheet.create({
     padding: 22,
   },
   hostAvatar: {
+    alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 23,
     height: 46,
@@ -231,10 +215,12 @@ const styles = StyleSheet.create({
     padding: 3,
     width: 46,
   },
-  hostImage: {
-    borderRadius: 20,
-    height: 40,
-    width: 40,
+  hostInitials: {
+    color: "#FF6535",
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 18,
+    textAlign: "center",
   },
   categoryBadge: {
     alignSelf: "flex-end",
@@ -306,21 +292,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: 20,
   },
-  avatarStack: {
-    flexDirection: "row",
-  },
-  stackAvatar: {
-    backgroundColor: "#BFD7ED",
-    borderColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 2,
-    height: 24,
-    width: 24,
-  },
   joinedText: {
     color: "#667085",
     fontSize: 14,
-    marginLeft: 10,
+    marginLeft: 8,
   },
   spotsWrap: {
     alignItems: "center",
@@ -377,20 +352,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
+  viewButtonDisabled: {
+    backgroundColor: "#98A2B3",
+  },
   viewButtonText: {
     color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: "900",
-  },
-  followButton: {
-    backgroundColor: "#FFF0EA",
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 13,
-  },
-  followButtonText: {
-    color: "#FF6535",
-    fontSize: 14,
     fontWeight: "900",
   },
 });

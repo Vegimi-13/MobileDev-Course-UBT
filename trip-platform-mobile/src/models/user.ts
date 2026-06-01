@@ -8,6 +8,4 @@ export type User = {
   bio?: string;
   avatarUrl?: string;
   tripsCount?: number;
-  followersCount?: number;
-  followingCount?: number;
 };

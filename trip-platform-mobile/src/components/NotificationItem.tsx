@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Heart,
   MessageCircle,
@@ -8,9 +8,12 @@ import {
   Users,
 } from "lucide-react-native";
 import type { AppNotification, NotificationKind } from "../models/notification";
+import { getInitialsFromName } from "../utils/initials";
 
 type NotificationItemProps = {
   notification: AppNotification;
+  onAccept?: (notification: AppNotification) => void;
+  onDecline?: (notification: AppNotification) => void;
 };
 
 const TYPE_CONFIG: Record<
@@ -55,6 +58,8 @@ const TYPE_CONFIG: Record<
 
 export default function NotificationItem({
   notification,
+  onAccept,
+  onDecline,
 }: NotificationItemProps) {
   const config = TYPE_CONFIG[notification.type];
   const Icon = config.Icon;
@@ -70,7 +75,11 @@ export default function NotificationItem({
       >
         <Icon color={config.color} size={18} strokeWidth={2.1} />
       </View>
-      <Image source={{ uri: notification.avatarUrl }} style={styles.avatar} />
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>
+          {getInitialsFromName(notification.actorName)}
+        </Text>
+      </View>
 
       <View style={styles.body}>
         <Text style={styles.message}>
@@ -85,10 +94,16 @@ export default function NotificationItem({
 
       {notification.actionable && (
         <View style={styles.actions}>
-          <Pressable style={styles.acceptButton}>
+          <Pressable
+            style={styles.acceptButton}
+            onPress={() => onAccept?.(notification)}
+          >
             <Text style={styles.acceptText}>Accept</Text>
           </Pressable>
-          <Pressable style={styles.declineButton}>
+          <Pressable
+            style={styles.declineButton}
+            onPress={() => onDecline?.(notification)}
+          >
             <Text style={styles.declineText}>Decline</Text>
           </Pressable>
         </View>
@@ -130,12 +145,20 @@ const styles = StyleSheet.create({
     width: 44,
   },
   avatar: {
+    alignItems: "center",
+    backgroundColor: "#17172B",
     borderColor: "#FFFFFF",
     borderRadius: 20,
     borderWidth: 2,
     height: 40,
+    justifyContent: "center",
     marginLeft: -12,
     width: 40,
+  },
+  avatarText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
   },
   body: {
     flex: 1,

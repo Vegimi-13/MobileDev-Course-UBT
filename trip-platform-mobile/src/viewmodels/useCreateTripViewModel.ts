@@ -84,16 +84,14 @@ export const coverOptions = [
   },
 ];
 
-const parseDateInput = (value: string) => {
-  const trimmed = value.trim();
-  const parts = trimmed.split(".");
+const parseDateInput = (value: string) =>
+  new Date(`${value}T00:00:00.000Z`).toISOString();
 
-  if (parts.length === 3) {
-    const [day, month, year] = parts;
-    return new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString();
-  }
+const isValidDateInput = (value: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
 
-  return new Date(trimmed).toISOString();
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
 
 export function useCreateTripViewModel(onCreated: () => void) {
@@ -123,8 +121,9 @@ export function useCreateTripViewModel(onCreated: () => void) {
     step === 1
       ? form.title.trim().length >= 3 &&
         form.destination.trim().length >= 2 &&
-        form.startDate.trim().length > 0 &&
-        form.endDate.trim().length > 0
+        isValidDateInput(form.startDate) &&
+        isValidDateInput(form.endDate) &&
+        form.endDate >= form.startDate
       : step === 2
         ? form.categoryName.trim().length > 0 && form.maxMembers > 0
         : true;
@@ -141,6 +140,10 @@ export function useCreateTripViewModel(onCreated: () => void) {
     setError("");
 
     try {
+      if (form.endDate < form.startDate) {
+        throw new Error("End date must be after start date");
+      }
+
       const payload: CreateTripPayload = {
         title: form.title.trim(),
         destination: form.destination.trim(),

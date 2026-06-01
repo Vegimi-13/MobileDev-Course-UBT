@@ -10,8 +10,8 @@ export type AppNotification = {
   id: string;
   type: NotificationKind;
   actorName: string;
-  avatarUrl: string;
   message: string;
+  tripPublicId?: string;
   tripTitle?: string;
   createdAtLabel: string;
   isRead: boolean;

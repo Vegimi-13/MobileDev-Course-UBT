@@ -13,12 +13,10 @@ type ApiNotification = {
     username?: string | null;
   } | null;
   trip?: {
+    publicId?: string;
     title: string;
   } | null;
 };
-
-const avatarUrl =
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&q=80";
 
 const timeAgo = (value: string) => {
   const diffMs = Date.now() - new Date(value).getTime();
@@ -35,8 +33,8 @@ const mapNotification = (item: ApiNotification): AppNotification => ({
   actorName: item.sender
     ? `${item.sender.firstName} ${item.sender.lastName}`.trim()
     : "Trip Platform",
-  avatarUrl,
   message: item.message,
+  tripPublicId: item.trip?.publicId,
   tripTitle: item.trip?.title,
   createdAtLabel: timeAgo(item.createdAt),
   isRead: item.isRead,

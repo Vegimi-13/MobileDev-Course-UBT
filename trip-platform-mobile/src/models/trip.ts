@@ -22,9 +22,10 @@ export type Trip = {
   category?: "Beach" | "Mountains" | "City" | "Adventure";
   membersJoined?: number;
   maxMembers?: number;
-  isFollowingHost?: boolean;
+  membershipStatus?: "PENDING" | "ACCEPTED" | "DECLINED";
   isOwner?: boolean;
   hasJoined?: boolean;
+  hasRequested?: boolean;
 };
 
 export type TripPost = {

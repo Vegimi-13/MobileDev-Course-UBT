@@ -2,7 +2,7 @@ import type { User } from "../models/user";
 import { apiRequest } from "./apiClient";
 
 export type UpdateCurrentUserPayload = Partial<
-  Pick<User, "firstName" | "lastName" | "username" | "bio" | "avatarUrl">
+  Pick<User, "firstName" | "lastName" | "username" | "bio">
 >;
 
 export async function fetchCurrentUser(): Promise<User> {
@@ -12,14 +12,9 @@ export async function fetchCurrentUser(): Promise<User> {
 
   return {
     ...user,
-    avatarUrl:
-      user.avatarUrl ??
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
     bio:
       user.bio ??
       "Explorer. Coffee addict. Always planning the next trip and the one after that.",
-    followersCount: user.followersCount ?? 0,
-    followingCount: user.followingCount ?? 0,
   };
 }
 
@@ -32,11 +27,7 @@ export async function updateCurrentUser(
     method: "PATCH",
   });
 
-  return {
-    ...user,
-    followersCount: user.followersCount ?? 0,
-    followingCount: user.followingCount ?? 0,
-  };
+  return user;
 }
 
 export async function searchUsers(query: string): Promise<User[]> {

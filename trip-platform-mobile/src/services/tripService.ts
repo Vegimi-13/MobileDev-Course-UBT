@@ -77,6 +77,7 @@ export const mapTrip = (trip: ApiTrip): Trip => {
   const membersJoined = trip._count?.participants ?? trip.participants?.length ?? 0;
   const maxMembers = trip.maxMembers ?? undefined;
   const categoryName = trip.category?.name;
+  const membershipStatus = trip.participants?.[0]?.status;
 
   return {
     id: trip.id,
@@ -103,7 +104,9 @@ export const mapTrip = (trip: ApiTrip): Trip => {
     category: getCategory(categoryName),
     membersJoined,
     maxMembers,
-    hasJoined: trip.participants?.some((entry) => entry.status === "ACCEPTED"),
+    membershipStatus,
+    hasJoined: membershipStatus === "ACCEPTED",
+    hasRequested: membershipStatus === "PENDING",
   };
 };
 
@@ -180,5 +183,19 @@ export async function inviteUserToTrip(publicId: string, userId: string) {
     authenticated: true,
     body: { userId },
     method: "POST",
+  });
+}
+
+export async function acceptTripInvite(publicId: string) {
+  return apiRequest(`/api/trips/${publicId}/invites/accept`, {
+    authenticated: true,
+    method: "PATCH",
+  });
+}
+
+export async function declineTripInvite(publicId: string) {
+  return apiRequest(`/api/trips/${publicId}/invites/decline`, {
+    authenticated: true,
+    method: "PATCH",
   });
 }
