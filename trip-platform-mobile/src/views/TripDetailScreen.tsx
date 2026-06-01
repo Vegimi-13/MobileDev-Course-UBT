@@ -13,18 +13,15 @@ import {
 } from "react-native";
 import {
   ArrowLeft,
-  Camera,
   Heart,
   MapPin,
-  MoreHorizontal,
   Send,
-  Share2,
-  Star,
   UserPlus,
   Users,
 } from "lucide-react-native";
 import type { User } from "../models/user";
 import { useTripDetailViewModel } from "../viewmodels/useTripDetailViewModel";
+import { getInitials, getInitialsFromName } from "../utils/initials";
 
 type TripDetailScreenProps = {
   publicId: string;
@@ -54,6 +51,13 @@ export function TripDetailScreen({ publicId, onBack }: TripDetailScreenProps) {
     );
   }
 
+  const membershipLabel = trip.hasJoined
+    ? "Joined"
+    : trip.hasRequested
+      ? "Requested"
+      : "Join Trip";
+  const showMembershipAction = Boolean(trip.publicId && !trip.isOwner);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -70,11 +74,6 @@ export function TripDetailScreen({ publicId, onBack }: TripDetailScreenProps) {
             <Pressable style={styles.circleButton} onPress={onBack}>
               <ArrowLeft color="#FFFFFF" size={24} strokeWidth={2.3} />
             </Pressable>
-            <View style={styles.rightActions}>
-              <Pressable style={styles.circleButton}>
-                <Share2 color="#FFFFFF" size={20} strokeWidth={2.1} />
-              </Pressable>
-            </View>
           </View>
           <View style={styles.heroBottom}>
             <View style={styles.badgeRow}>
@@ -98,10 +97,6 @@ export function TripDetailScreen({ publicId, onBack }: TripDetailScreenProps) {
             <View style={styles.hostTextWrap}>
               <Text style={styles.hostName}>{trip.host}</Text>
               <Text style={styles.hostRole}>Trip Organizer</Text>
-            </View>
-            <View style={styles.ratingRow}>
-              <Star color="#FFB000" fill="#FFB000" size={16} />
-              <Text style={styles.ratingText}>4.5</Text>
             </View>
           </View>
 
@@ -132,10 +127,17 @@ export function TripDetailScreen({ publicId, onBack }: TripDetailScreenProps) {
               />
               <Text style={styles.likeButtonText}>Like</Text>
             </Pressable>
-            {vm.canJoin ? (
-              <Pressable style={styles.joinButton} onPress={vm.requestJoin}>
+            {showMembershipAction ? (
+              <Pressable
+                disabled={!vm.canJoin}
+                style={[
+                  styles.joinButton,
+                  !vm.canJoin && styles.joinButtonDisabled,
+                ]}
+                onPress={vm.requestJoin}
+              >
                 <UserPlus color="#FFFFFF" size={20} />
-                <Text style={styles.joinButtonText}>Join Trip</Text>
+                <Text style={styles.joinButtonText}>{membershipLabel}</Text>
               </Pressable>
             ) : null}
             <Pressable
@@ -147,15 +149,7 @@ export function TripDetailScreen({ publicId, onBack }: TripDetailScreenProps) {
           </View>
         </View>
 
-        <View style={styles.tabs}>
-          {["Feed", "Photos", "Reviews", "Details"].map((tab, index) => (
-            <View key={tab} style={[styles.tab, index === 0 && styles.tabActive]}>
-              <Text style={[styles.tabText, index === 0 && styles.tabTextActive]}>
-                {tab}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <Text style={styles.feedTitle}>Trip Feed</Text>
 
         {vm.canPost ? (
           <View style={styles.composer}>
@@ -167,8 +161,8 @@ export function TripDetailScreen({ publicId, onBack }: TripDetailScreenProps) {
               value={vm.postBody}
               onChangeText={vm.setPostBody}
             />
-            <Pressable style={styles.cameraButton} onPress={vm.submitPost}>
-              <Camera color="#FFFFFF" size={18} />
+            <Pressable style={styles.sendButton} onPress={vm.submitPost}>
+              <Send color="#FFFFFF" size={18} />
             </Pressable>
           </View>
         ) : null}
@@ -177,7 +171,9 @@ export function TripDetailScreen({ publicId, onBack }: TripDetailScreenProps) {
           <View key={post.id} style={styles.postCard}>
             <View style={styles.postHeader}>
               <Avatar
-                imageUrl={post.author.avatarUrl}
+                firstName={post.author.firstName}
+                lastName={post.author.lastName}
+                username={post.author.username}
                 userName={`${post.author.firstName} ${post.author.lastName}`}
                 small
               />
@@ -189,17 +185,11 @@ export function TripDetailScreen({ publicId, onBack }: TripDetailScreenProps) {
                   {new Date(post.createdAt).toLocaleDateString()}
                 </Text>
               </View>
-              <MoreHorizontal color="#98A2B3" size={22} />
             </View>
             <Text style={styles.postBody}>{post.body}</Text>
             {post.imageUrl ? (
               <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
             ) : null}
-            <View style={styles.postFooter}>
-              <Heart color="#98A2B3" size={22} />
-              <Text style={styles.postMetric}>0</Text>
-              <Send color="#98A2B3" size={21} />
-            </View>
           </View>
         ))}
 
@@ -245,20 +235,26 @@ function Pill({ label, tone }: { label: string; tone: "mint" | "orange" | "cream
 }
 
 function Avatar({
-  imageUrl,
+  firstName,
+  lastName,
+  username,
   userName,
   small = false,
 }: {
-  imageUrl?: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
   userName: string;
   small?: boolean;
 }) {
   const sizeStyle = small ? styles.avatarSmall : styles.avatar;
-  return imageUrl ? (
-    <Image source={{ uri: imageUrl }} style={sizeStyle} />
-  ) : (
+  const initials = firstName || lastName || username
+    ? getInitials(firstName, lastName, username)
+    : getInitialsFromName(userName);
+
+  return (
     <View style={[sizeStyle, styles.avatarFallback]}>
-      <Text style={styles.avatarFallbackText}>{userName.slice(0, 1)}</Text>
+      <Text style={styles.avatarFallbackText}>{initials}</Text>
     </View>
   );
 }
@@ -299,7 +295,9 @@ function InviteFriendsSheet({
           {users.map((user) => (
             <View key={user.id} style={styles.inviteRow}>
               <Avatar
-                imageUrl={user.avatarUrl}
+                firstName={user.firstName}
+                lastName={user.lastName}
+                username={user.username}
                 userName={`${user.firstName} ${user.lastName}`}
                 small
               />
@@ -359,7 +357,6 @@ const styles = StyleSheet.create({
     right: 20,
     top: 24,
   },
-  rightActions: { flexDirection: "row", gap: 12 },
   circleButton: {
     alignItems: "center",
     backgroundColor: "rgba(23,23,43,0.45)",
@@ -405,8 +402,6 @@ const styles = StyleSheet.create({
   hostTextWrap: { flex: 1, marginLeft: 12 },
   hostName: { color: "#17172B", fontSize: 16, fontWeight: "900" },
   hostRole: { color: "#98A2B3", fontSize: 13, fontWeight: "700", marginTop: 4 },
-  ratingRow: { alignItems: "center", flexDirection: "row", gap: 5 },
-  ratingText: { color: "#26233B", fontSize: 14, fontWeight: "900" },
   statsGrid: { flexDirection: "row", gap: 12, marginTop: 18 },
   statBox: {
     backgroundColor: "#FFF1E8",
@@ -441,6 +436,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 56,
   },
+  joinButtonDisabled: {
+    backgroundColor: "#98A2B3",
+  },
   joinButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
   inviteButton: {
     alignItems: "center",
@@ -450,18 +448,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 56,
   },
-  tabs: {
-    backgroundColor: "#EEE6DE",
-    borderRadius: 20,
-    flexDirection: "row",
+  feedTitle: {
+    color: "#17172B",
+    fontSize: 20,
+    fontWeight: "900",
     marginHorizontal: 18,
     marginTop: 24,
-    padding: 5,
   },
-  tab: { alignItems: "center", borderRadius: 16, flex: 1, minHeight: 48, justifyContent: "center" },
-  tabActive: { backgroundColor: "#FFFFFF" },
-  tabText: { color: "#98A2B3", fontSize: 14, fontWeight: "900" },
-  tabTextActive: { color: "#17172B" },
   composer: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
@@ -482,7 +475,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
     paddingHorizontal: 16,
   },
-  cameraButton: {
+  sendButton: {
     alignItems: "center",
     backgroundColor: "#FF6535",
     borderRadius: 18,
@@ -505,8 +498,6 @@ const styles = StyleSheet.create({
   postTime: { color: "#98A2B3", fontSize: 12, fontWeight: "700", marginTop: 3 },
   postBody: { color: "#17172B", fontSize: 15, lineHeight: 22, paddingHorizontal: 16, paddingBottom: 14 },
   postImage: { height: 280, width: "100%" },
-  postFooter: { alignItems: "center", flexDirection: "row", gap: 8, padding: 16 },
-  postMetric: { color: "#8F96A6", fontSize: 14, fontWeight: "800", marginRight: 14 },
   emptyCard: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",

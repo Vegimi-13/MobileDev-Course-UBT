@@ -17,9 +17,16 @@ import { useHomeViewModel } from "../viewmodels/useHomeViewModel";
 type HomeScreenProps = {
   apiUrl: string;
   onOpenTrip?: (publicId: string) => void;
+  onOpenAlerts?: () => void;
+  unreadCount?: number;
 };
 
-export function HomeScreen({ apiUrl, onOpenTrip }: HomeScreenProps) {
+export function HomeScreen({
+  apiUrl,
+  onOpenAlerts,
+  onOpenTrip,
+  unreadCount = 0,
+}: HomeScreenProps) {
   const {
     activeStatusFilter,
     discoverTrips,
@@ -32,7 +39,6 @@ export function HomeScreen({ apiUrl, onOpenTrip }: HomeScreenProps) {
     requestJoinTrip,
     setActiveStatusFilter,
     statusFilters,
-    toggleFollowHost,
     toggleTripLike,
     user,
   } = useHomeViewModel();
@@ -48,7 +54,6 @@ export function HomeScreen({ apiUrl, onOpenTrip }: HomeScreenProps) {
         renderItem={({ item }) => (
           <HomeTripFeatureCard
             trip={item}
-            onFollowHost={toggleFollowHost}
             onJoinTrip={requestJoinTrip}
             onOpenTrip={(trip) => trip.publicId && onOpenTrip?.(trip.publicId)}
             onToggleLike={toggleTripLike}
@@ -66,11 +71,18 @@ export function HomeScreen({ apiUrl, onOpenTrip }: HomeScreenProps) {
                   <Pressable style={styles.headerIconButton}>
                     <Search color="#17172B" size={23} strokeWidth={2.2} />
                   </Pressable>
-                  <Pressable style={styles.headerIconButton}>
+                  <Pressable
+                    style={styles.headerIconButton}
+                    onPress={onOpenAlerts}
+                  >
                     <Bell color="#17172B" size={23} strokeWidth={2.2} />
-                    <View style={styles.alertBadge}>
-                      <Text style={styles.alertBadgeText}>3</Text>
-                    </View>
+                    {unreadCount > 0 && (
+                      <View style={styles.alertBadge}>
+                        <Text style={styles.alertBadgeText}>
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </Text>
+                      </View>
+                    )}
                   </Pressable>
                 </View>
               </View>
@@ -119,7 +131,6 @@ export function HomeScreen({ apiUrl, onOpenTrip }: HomeScreenProps) {
                     key={trip.id}
                     trip={trip}
                     compact
-                    onFollowHost={toggleFollowHost}
                     onJoinTrip={requestJoinTrip}
                     onOpenTrip={(trip) => trip.publicId && onOpenTrip?.(trip.publicId)}
                     onToggleLike={toggleTripLike}

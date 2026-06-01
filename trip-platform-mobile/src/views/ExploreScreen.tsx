@@ -33,7 +33,6 @@ export function ExploreScreen({ onOpenTrip }: ExploreScreenProps) {
     setAccessFilter,
     setCategoryFilter,
     setQuery,
-    toggleFollowHost,
     toggleTripLike,
   } = useExploreViewModel();
 
@@ -50,7 +49,6 @@ export function ExploreScreen({ onOpenTrip }: ExploreScreenProps) {
         renderItem={({ item }) => (
           <ExploreTripCard
             trip={item}
-            onFollowHost={toggleFollowHost}
             onJoinTrip={requestJoinTrip}
             onOpenTrip={(trip) => trip.publicId && onOpenTrip?.(trip.publicId)}
             onToggleLike={toggleTripLike}

@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   ActivityIndicator,
   Image,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -15,9 +16,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Check,
   Globe2,
-  ImageIcon,
   Lock,
   MapPin,
   Minus,
@@ -36,8 +38,21 @@ type CreateTripScreenProps = {
   onExplore: () => void;
 };
 
+type DateFieldKey = "startDate" | "endDate";
+
 export function CreateTripScreen({ onDone, onExplore }: CreateTripScreenProps) {
   const vm = useCreateTripViewModel(onDone);
+  const [activeDateField, setActiveDateField] = useState<DateFieldKey | null>(null);
+
+  const selectDate = (value: string) => {
+    if (!activeDateField) return;
+
+    vm.updateField(activeDateField, value);
+    if (activeDateField === "startDate" && vm.form.endDate && vm.form.endDate < value) {
+      vm.updateField("endDate", value);
+    }
+    setActiveDateField(null);
+  };
 
   if (vm.step === 4) {
     return (
@@ -119,14 +134,16 @@ export function CreateTripScreen({ onDone, onExplore }: CreateTripScreenProps) {
                 <FieldLabel label="Start date *" />
                 <DateInput
                   value={vm.form.startDate}
-                  onChange={(value) => vm.updateField("startDate", value)}
+                  placeholder="Select start"
+                  onPress={() => setActiveDateField("startDate")}
                 />
               </View>
               <View style={styles.dateField}>
                 <FieldLabel label="End date *" />
                 <DateInput
                   value={vm.form.endDate}
-                  onChange={(value) => vm.updateField("endDate", value)}
+                  placeholder="Select end"
+                  onPress={() => setActiveDateField("endDate")}
                 />
               </View>
             </View>
@@ -253,10 +270,6 @@ export function CreateTripScreen({ onDone, onExplore }: CreateTripScreenProps) {
                 </Pressable>
               ))}
             </View>
-            <View style={styles.uploadBox}>
-              <ImageIcon color="#FFB000" size={22} />
-              <Text style={styles.uploadText}>Upload from Gallery</Text>
-            </View>
           </>
         )}
 
@@ -293,6 +306,13 @@ export function CreateTripScreen({ onDone, onExplore }: CreateTripScreenProps) {
           )}
         </Pressable>
       </View>
+      <TripCalendarModal
+        minValue={activeDateField === "endDate" ? vm.form.startDate : undefined}
+        selectedValue={activeDateField ? vm.form[activeDateField] : ""}
+        visible={activeDateField !== null}
+        onClose={() => setActiveDateField(null)}
+        onSelect={selectDate}
+      />
       <StatusBar style="dark" />
     </SafeAreaView>
   );
@@ -303,23 +323,134 @@ function FieldLabel({ label }: { label: string }) {
 }
 
 function DateInput({
+  placeholder,
+  onPress,
   value,
-  onChange,
 }: {
+  placeholder: string;
+  onPress: () => void;
   value: string;
-  onChange: (value: string) => void;
 }) {
   return (
-    <View style={styles.iconInput}>
+    <Pressable style={styles.iconInput} onPress={onPress}>
       <Calendar color="#98A2B3" size={20} strokeWidth={2} />
-      <TextInput
-        onChangeText={onChange}
-        placeholder="dd.mm.yyyy"
-        placeholderTextColor="#17172B"
-        style={styles.iconTextInput}
-        value={value}
-      />
-    </View>
+      <Text style={[styles.dateText, !value && styles.datePlaceholder]}>
+        {value ? formatDateLabel(value) : placeholder}
+      </Text>
+    </Pressable>
+  );
+}
+
+function TripCalendarModal({
+  minValue,
+  onClose,
+  onSelect,
+  selectedValue,
+  visible,
+}: {
+  minValue?: string;
+  onClose: () => void;
+  onSelect: (value: string) => void;
+  selectedValue: string;
+  visible: boolean;
+}) {
+  const initialDate = selectedValue ? parseDateKey(selectedValue) : new Date();
+  const [visibleMonth, setVisibleMonth] = useState(
+    new Date(initialDate.getFullYear(), initialDate.getMonth(), 1),
+  );
+
+  useEffect(() => {
+    if (!visible) return;
+    const date = selectedValue ? parseDateKey(selectedValue) : new Date();
+    setVisibleMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+  }, [selectedValue, visible]);
+
+  const days = useMemo(() => {
+    const year = visibleMonth.getFullYear();
+    const month = visibleMonth.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    return [
+      ...Array.from({ length: firstDay }, () => null),
+      ...Array.from({ length: daysInMonth }, (_, index) => {
+        const day = index + 1;
+        return toDateKey(new Date(year, month, day));
+      }),
+    ];
+  }, [visibleMonth]);
+
+  const monthLabel = new Intl.DateTimeFormat("en", {
+    month: "long",
+    year: "numeric",
+  }).format(visibleMonth);
+
+  const moveMonth = (offset: number) => {
+    setVisibleMonth(
+      (current) => new Date(current.getFullYear(), current.getMonth() + offset, 1),
+    );
+  };
+
+  return (
+    <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.calendarSheet}>
+          <View style={styles.calendarHeader}>
+            <Pressable style={styles.monthButton} onPress={() => moveMonth(-1)}>
+              <ChevronLeft color="#17172B" size={20} strokeWidth={2.4} />
+            </Pressable>
+            <Text style={styles.calendarTitle}>{monthLabel}</Text>
+            <Pressable style={styles.monthButton} onPress={() => moveMonth(1)}>
+              <ChevronRight color="#17172B" size={20} strokeWidth={2.4} />
+            </Pressable>
+          </View>
+
+          <View style={styles.weekRow}>
+            {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+              <Text key={`${day}-${index}`} style={styles.weekDay}>
+                {day}
+              </Text>
+            ))}
+          </View>
+
+          <View style={styles.dayGrid}>
+            {days.map((dateKey, index) => {
+              const isDisabled = Boolean(dateKey && minValue && dateKey < minValue);
+              const isSelected = dateKey === selectedValue;
+
+              return dateKey ? (
+                <Pressable
+                  key={dateKey}
+                  disabled={isDisabled}
+                  onPress={() => onSelect(dateKey)}
+                  style={[
+                    styles.dayCell,
+                    isSelected && styles.dayCellSelected,
+                    isDisabled && styles.dayCellDisabled,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      isSelected && styles.dayTextSelected,
+                      isDisabled && styles.dayTextDisabled,
+                    ]}
+                  >
+                    {Number(dateKey.slice(-2))}
+                  </Text>
+                </Pressable>
+              ) : (
+                <View key={`blank-${index}`} style={styles.dayCell} />
+              );
+            })}
+          </View>
+
+          <Pressable style={styles.closeCalendarButton} onPress={onClose}>
+            <Text style={styles.closeCalendarText}>Cancel</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -386,6 +517,25 @@ function ChipButton({
     </Pressable>
   );
 }
+
+const toDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateKey = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatDateLabel = (value: string) =>
+  new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(parseDateKey(value));
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FBF4EC" },
@@ -455,6 +605,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   iconTextInput: { color: "#17172B", flex: 1, fontSize: 17, marginLeft: 12 },
+  dateText: {
+    color: "#17172B",
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "800",
+    marginLeft: 12,
+  },
+  datePlaceholder: {
+    color: "#8F96A6",
+    fontWeight: "700",
+  },
   dateRow: { flexDirection: "row", gap: 14 },
   dateField: { flex: 1 },
   textArea: { minHeight: 150, paddingTop: 18, textAlignVertical: "top" },
@@ -563,19 +724,6 @@ const styles = StyleSheet.create({
     right: 0,
     textAlign: "center",
   },
-  uploadBox: {
-    alignItems: "center",
-    borderColor: "#FFB000",
-    borderRadius: 18,
-    borderStyle: "dashed",
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    justifyContent: "center",
-    marginTop: 28,
-    minHeight: 70,
-  },
-  uploadText: { color: "#FFB000", fontSize: 16, fontWeight: "900" },
   footer: {
     backgroundColor: "#FBF4EC",
     bottom: 0,
@@ -639,4 +787,88 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   secondaryButtonText: { color: "#667085", fontSize: 17, fontWeight: "900" },
+  modalBackdrop: {
+    alignItems: "center",
+    backgroundColor: "rgba(23, 23, 43, 0.42)",
+    flex: 1,
+    justifyContent: "center",
+    padding: 18,
+  },
+  calendarSheet: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 18,
+    width: "100%",
+  },
+  calendarHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 18,
+  },
+  calendarTitle: {
+    color: "#17172B",
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  monthButton: {
+    alignItems: "center",
+    backgroundColor: "#F8F3F0",
+    borderRadius: 18,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+  weekRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  weekDay: {
+    color: "#98A2B3",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  dayGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  dayCell: {
+    alignItems: "center",
+    aspectRatio: 1,
+    justifyContent: "center",
+    width: `${100 / 7}%`,
+  },
+  dayCellSelected: {
+    backgroundColor: "#FF6535",
+    borderRadius: 18,
+  },
+  dayCellDisabled: {
+    opacity: 0.35,
+  },
+  dayText: {
+    color: "#17172B",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  dayTextSelected: {
+    color: "#FFFFFF",
+  },
+  dayTextDisabled: {
+    color: "#98A2B3",
+  },
+  closeCalendarButton: {
+    alignItems: "center",
+    backgroundColor: "#EEEAE6",
+    borderRadius: 16,
+    marginTop: 18,
+    minHeight: 52,
+    justifyContent: "center",
+  },
+  closeCalendarText: {
+    color: "#667085",
+    fontSize: 15,
+    fontWeight: "900",
+  },
 });

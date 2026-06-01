@@ -19,6 +19,8 @@ type NotificationsScreenProps = {
 export function NotificationsScreen({ onLogout }: NotificationsScreenProps) {
   const {
     earlierNotifications,
+    acceptInvite,
+    declineInvite,
     error,
     isLoading,
     markAllRead,
@@ -58,7 +60,11 @@ export function NotificationsScreen({ onLogout }: NotificationsScreenProps) {
               {showEarlierHeader && (
                 <Text style={styles.sectionLabel}>EARLIER</Text>
               )}
-              <NotificationItem notification={item} />
+              <NotificationItem
+                notification={item}
+                onAccept={acceptInvite}
+                onDecline={declineInvite}
+              />
             </>
           );
         }}

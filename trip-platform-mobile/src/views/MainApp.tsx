@@ -32,7 +32,12 @@ export function MainApp({ apiUrl, onLogout }: MainAppProps) {
         ) : (
           <>
             {activeTab === "home" && (
-              <HomeScreen apiUrl={apiUrl} onOpenTrip={openTrip} />
+              <HomeScreen
+                apiUrl={apiUrl}
+                onOpenAlerts={() => selectTab("alerts")}
+                onOpenTrip={openTrip}
+                unreadCount={unreadCount}
+              />
             )}
             {activeTab === "explore" && <ExploreScreen onOpenTrip={openTrip} />}
             {activeTab === "alerts" && (

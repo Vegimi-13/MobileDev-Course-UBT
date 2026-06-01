@@ -111,7 +111,7 @@ export function AuthScreen({
                     autoCapitalize="words"
                     onChangeText={(value) => onUpdateForm("firstName", value)}
                     placeholder="Arta"
-                    placeholderTextColor="#a9998f"
+                    placeholderTextColor="#8F96A6"
                     style={styles.input}
                     value={form.firstName}
                   />
@@ -122,7 +122,7 @@ export function AuthScreen({
                     autoCapitalize="words"
                     onChangeText={(value) => onUpdateForm("lastName", value)}
                     placeholder="Krasniqi"
-                    placeholderTextColor="#a9998f"
+                    placeholderTextColor="#8F96A6"
                     style={styles.input}
                     value={form.lastName}
                   />
@@ -137,7 +137,7 @@ export function AuthScreen({
               keyboardType="email-address"
               onChangeText={(value) => onUpdateForm("email", value)}
               placeholder="you@example.com"
-              placeholderTextColor="#a9998f"
+              placeholderTextColor="#8F96A6"
               style={styles.input}
               textContentType="emailAddress"
               value={form.email}
@@ -148,7 +148,7 @@ export function AuthScreen({
               autoCapitalize="none"
               onChangeText={(value) => onUpdateForm("password", value)}
               placeholder={mode === "login" ? "Your password" : "6+ characters"}
-              placeholderTextColor="#a9998f"
+              placeholderTextColor="#8F96A6"
               secureTextEntry
               style={styles.input}
               textContentType={mode === "login" ? "password" : "newPassword"}
@@ -190,7 +190,7 @@ export function AuthScreen({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff7ef",
+    backgroundColor: "#FBF4EC",
   },
   keyboardView: {
     flex: 1,
@@ -208,44 +208,44 @@ const styles = StyleSheet.create({
   },
   logo: {
     alignItems: "center",
-    backgroundColor: "#c76f33",
+    backgroundColor: "#FF6535",
     borderRadius: 18,
     height: 56,
     justifyContent: "center",
-    shadowColor: "#7c3f1d",
+    shadowColor: "#2C2117",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
     shadowRadius: 18,
     width: 56,
   },
   logoText: {
-    color: "#fffaf4",
+    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "800",
   },
   brandName: {
-    color: "#2c201b",
+    color: "#17172B",
     fontSize: 25,
-    fontWeight: "800",
+    fontWeight: "900",
   },
   brandTagline: {
-    color: "#7d6254",
+    color: "#667085",
     fontSize: 14,
     marginTop: 2,
   },
   panel: {
-    backgroundColor: "#fffdf9",
-    borderColor: "#efd9c8",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#EDE4DB",
     borderRadius: 24,
     borderWidth: 1,
     padding: 22,
-    shadowColor: "#7c3f1d",
+    shadowColor: "#2C2117",
     shadowOffset: { width: 0, height: 18 },
     shadowOpacity: 0.1,
     shadowRadius: 28,
   },
   segmentedControl: {
-    backgroundColor: "#f4e3d5",
+    backgroundColor: "#EEE6DE",
     borderRadius: 16,
     flexDirection: "row",
     marginBottom: 26,
@@ -259,28 +259,28 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   segmentActive: {
-    backgroundColor: "#fffaf4",
-    shadowColor: "#7c3f1d",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#271B14",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
   },
   segmentText: {
-    color: "#7d6254",
+    color: "#98A2B3",
     fontSize: 15,
     fontWeight: "700",
   },
   segmentTextActive: {
-    color: "#a94f22",
+    color: "#17172B",
   },
   title: {
-    color: "#2c201b",
+    color: "#17172B",
     fontSize: 30,
-    fontWeight: "800",
+    fontWeight: "900",
     marginBottom: 8,
   },
   subtitle: {
-    color: "#765e52",
+    color: "#667085",
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 24,
@@ -293,60 +293,60 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   label: {
-    color: "#4b3930",
+    color: "#667085",
     fontSize: 13,
     fontWeight: "800",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#fff8f1",
-    borderColor: "#ead2bf",
+    backgroundColor: "#FBF4EC",
+    borderColor: "#E7E1DC",
     borderRadius: 14,
     borderWidth: 1,
-    color: "#2c201b",
+    color: "#17172B",
     fontSize: 16,
     marginBottom: 16,
     minHeight: 52,
     paddingHorizontal: 14,
   },
   messageBox: {
-    backgroundColor: "#fff0e5",
-    borderColor: "#e2ae86",
+    backgroundColor: "#FFF0EA",
+    borderColor: "#FFD8C9",
     borderRadius: 14,
     borderWidth: 1,
     marginBottom: 16,
     padding: 12,
   },
   messageText: {
-    color: "#8f3d1d",
+    color: "#C2410C",
     fontSize: 14,
     lineHeight: 20,
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#b85f2b",
+    backgroundColor: "#FF6535",
     borderRadius: 16,
     justifyContent: "center",
     minHeight: 54,
-    shadowColor: "#7c3f1d",
+    shadowColor: "#2C2117",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 18,
   },
   primaryButtonPressed: {
-    backgroundColor: "#9e4e22",
+    backgroundColor: "#F26A2E",
   },
   primaryButtonDisabled: {
-    backgroundColor: "#d8aa8d",
+    backgroundColor: "#F2C5B4",
     shadowOpacity: 0,
   },
   primaryButtonText: {
-    color: "#fffaf4",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "800",
   },
   apiText: {
-    color: "#8b7163",
+    color: "#98A2B3",
     fontSize: 12,
     lineHeight: 18,
     marginTop: 18,
