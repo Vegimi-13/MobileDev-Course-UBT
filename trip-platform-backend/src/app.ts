@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 //importet
 import authRoutes from "./modules/auth/auth.routes";
 import tripRoutes from "./modules/trip/trip.routes";
@@ -8,6 +9,7 @@ import likeRoutes from "./modules/like/like.routes";
 import notificationRoutes from "./modules/notification/notification.routes";
 import mediaRoutes from "./modules/media/media.routes";
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
